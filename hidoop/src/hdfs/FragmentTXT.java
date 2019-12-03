@@ -1,11 +1,11 @@
 package hdfs;
 
-public class FragmentTexte {
+public class FragmentTXT {
 
 	private int ordre;
 	private String texte;
 
-	public FragmentTexte(int ordre, String texte) {
+	public FragmentTXT(int ordre, String texte) {
 		this.ordre = ordre;
 		this.texte = texte;
 	}
