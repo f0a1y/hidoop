@@ -5,17 +5,40 @@ import java.rmi.*;
 import map.Mapper;
 import formats.Format
 
-public class DaemonImpl implements Daemon {
+public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 	
 	
-
+	//constructeur
 	public DaemonImpl() throws RemoteException {
 	
 	}
 	
+	//methode distante
 	@Override
 	public void runMap(Mapper m, Format reader, Format writer, CallBack cb) throws RemoteException {
+
+			// creer un thread secondaire qui execute de map pendant qu'on redonne la main au prgm principal
+			Runnable rb = new Runnable(){
+				pubic void run() {
+					try {
+						self.map(m, reader, writer, cb);
+					}catch (RemoteException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+
+
+
+		
+
+		
+	}
+//string Format reader
+	public map (Mapper m, Format reader, Format writer, CallBack cb) throws RemoteException {
 		try {
+			// creer un thread secondaire pour redonner la main au prgm principal
+
 			//Ouverture du reader et du writer
 			reader.open(OpenMode.R);
 			writer.open(OpenMode.W);
@@ -32,16 +55,20 @@ public class DaemonImpl implements Daemon {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
-		// TODO Auto-generated method stub
-		
+
 	}
 	
 	public static void main(String args[]) {
 		try {
-			//Registry registry = LocateRegistry.createRegistry(4000);
-			Naming.rebind("//localhost:4000/Daemon", new DaemonImpl());
+			//creation du serveur de nom
+			Registry registry = LocateRegistry.createRegistry(4000);
+
+			//enregistrement auprès du serveur de nom
+			Naming.rebind("//"+Project.nomDeamon[args[0]]+":4000/Daemon", new DaemonImpl());
 			System.out.println("Daemon bound in registry");
+
+
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

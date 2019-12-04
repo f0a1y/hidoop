@@ -12,7 +12,7 @@ public class CallBackImpl implements CallBack {
 	public void MapFinished() throws RemoteException {
 		nbServeurs--;
 		if (nbServeurs == 0) {
-			//lancer le reduce
+			//Reveiller le thread principal (--> lancer le reduce)
 		}
 		
 	}
