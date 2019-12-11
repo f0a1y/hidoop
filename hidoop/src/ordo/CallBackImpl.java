@@ -1,6 +1,7 @@
 package ordo;
 
 import java.util.concurrent.Semaphore;
+import java.rmi.*;
 
 public class CallBackImpl implements CallBack {
 	
@@ -16,12 +17,23 @@ public class CallBackImpl implements CallBack {
 
 	@Override
 	public void MapFinished() throws RemoteException {
-		s.acquire();				//permet un accès exclusif
+
+		try{
+			s.acquire();
+		} catch (Exception e) {
+		e.printStackTrace();				//permet un accès exclusif
+		}
+
 		nbServeurs--;
 		if (nbServeurs == 0) {
 			temoin.notify();	//Reveiller le thread principal 
 		}
-		s.release();				//permet un accès exclusif
+
+		try{
+			s.release();				//permet un accès exclusif
+		} catch (Exception e) {
+			e.printStackTrace();				//permet un accès exclusif
+		}
 		
 	}
 

@@ -1,11 +1,18 @@
 package ordo;
 
+// pour compiler : se placer dans build puis javac ~/2A/hidoop/git/hidoop/hidoop/src/*/*.java
+
 import config.Project;
+import formats.Format;
 import formats.KVFormat;
 import formats.LineFormat;
+import formats.Format.OpenMode;
 import formats.Format.Type;
 import hdfs.HdfsClient;
 import map.MapReduce;
+
+import java.rmi.registry.*;
+import java.rmi.*;
 
 public class Job implements JobInterface {
 
@@ -50,7 +57,7 @@ public class Job implements JobInterface {
 				//nbMachine défini comme Project.nomDeamon.length
 			Daemon stubs[] = new Daemon[Project.nbMachine];
 			for (int i = 0; i < Project.nbMachine; i++) {	
-				stubs[i] = (Deamon)Naming.lookup("//"+Project.nomDeamon[i]+":4000/Daemon");
+				stubs[i] = (Daemon) Naming.lookup("//"+Project.nomDeamon[i]+":4000/Daemon");
 			
 			}
 
@@ -59,11 +66,11 @@ public class Job implements JobInterface {
 			// Ei.runmap(mr,  ,  , cb)
 			for (int i = 0; i < Project.nbMachine; i++) {
 				switch(inputFormat)	{
-					case KVFormat : 
-					stubs[i].runmap(mr, new KVFormat(this.inputFname), new KVFormat(this.inputFname), cb);
+					case KV : 
+					stubs[i].runMap(mr, new KVFormat(this.inputFname), new KVFormat(this.inputFname+"-resTemp"), cb);
 
-					case LineFormat : 
-					stubs[i].runmap(mr, new LineFormat(this.inputFname), new KVFormat(this.inputFname+"-resTemp"), cb);
+					case LINE : 
+					stubs[i].runMap(mr, new LineFormat(this.inputFname), new KVFormat(this.inputFname+"-resTemp"), cb);
 				}
 			
 			}
@@ -71,9 +78,15 @@ public class Job implements JobInterface {
 			//mettre en veille jusqu'au réveil du callback
 			temoin.wait();
 
+			//lecture des résultats avec hdfs
+				// truc avec des socket, alexandre m'envoie le code
+
+
 			//lancer le reduce
 			Format readerReduce = new KVFormat(this.inputFname+"-resTemp"); //ça me semble très faux, on verra plus tard ce qu'il faut mettre
 			Format writerReduce = new KVFormat(this.inputFname+"-res");
+			readerReduce.open(OpenMode.R);
+			writerReduce.open(OpenMode.R);
 			mr.reduce(readerReduce, writerReduce);
 
 			

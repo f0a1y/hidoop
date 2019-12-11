@@ -1,9 +1,19 @@
 package ordo;
 
 import java.rmi.*;
+import java.rmi.registry.*;
+import java.rmi.server.UnicastRemoteObject ;
 
-import map.Mapper;
+
+
+import map.*;
+import config.*  ;
 import formats.Format;
+
+
+import formats.Format.OpenMode;
+import formats.Format.Type;
+
 
 public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 	
@@ -13,32 +23,21 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 	
 	}
 	
-	private class MonThread extends Thread {
-		@Override
-		public void run() {
-			try {
-				mapInterne(m, reader, writer, cb);
-			}catch (RemoteException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+
+	
 
 	//methode distante
 	@Override
 	public void runMap(Mapper m, Format reader, Format writer, CallBack cb) throws RemoteException {
 
 		// creer un thread secondaire qui execute de map pendant qu'on redonne la main au prgm principal
-		Thread t = new Thread(){
-			public void run() {
-				try {
-					mapInterne(m, reader, writer, cb);
-				}catch (RemoteException e) {
-					e.printStackTrace();
-				}
+		Thread t = new Thread(() -> {
+			try {
+				mapInterne(m, reader, writer, cb);
+			}catch (RemoteException e) {
+				e.printStackTrace();
 			}
-		
-		};
+		});
 
 		t.start(); 
 
@@ -78,7 +77,7 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 
 			//enregistrement auprès du serveur de nom
 				//possibilité d'amélioration : récuperer le nom de l'host puis l'écrire dans l'objet projet
-			Naming.rebind("//"+Project.nomDeamon[args[0]]+":4000/Daemon", new DaemonImpl());  
+			Naming.rebind("//"+Project.nomDeamon[Integer.parseInt(args[0])]+":4000/Daemon", new DaemonImpl());  
 			System.out.println("Daemon bound in registry");
 
 
