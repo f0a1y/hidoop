@@ -1,7 +1,8 @@
 package hdfs;
 
-import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -11,13 +12,16 @@ public class ClientHDFS {
 
     public static void main(String[] args) {
         try {
+        	
+        	// Connexion avec le serveur
             Socket serveur = new Socket("localhost", 8080);
             OutputStream serveurOS = serveur.getOutputStream();
             InputStream serveurIS = serveur.getInputStream();
-            ByteBuffer convertisseur = ByteBuffer.allocate(Integer.SIZE/Byte.SIZE);
+            ByteBuffer convertisseur = ByteBuffer.allocate(Integer.BYTES);
             
             // Envoie de la commande
-            convertisseur.putInt(Integer.parseInt(args[0]));
+            int commande = Integer.parseInt(args[0]);
+            convertisseur.putInt(commande);
             byte[] buffer = convertisseur.array();
     		serveurOS.write(buffer, 0, buffer.length);
     		
@@ -30,24 +34,41 @@ public class ClientHDFS {
             buffer = nomFichier.getBytes();
     		serveurOS.write(buffer, 0, buffer.length);
     		
-    		// Envoie du contenu du fichier
-    		File fichier = new File(args[1]); 
-    		FileReader reader = new FileReader(fichier);
-    		int nbLus;
-    		char[] bufferFichier = new char[1024];
-    		convertisseur = ByteBuffer.allocate(1024 * (Character.SIZE / Byte.SIZE));
-    		while ((nbLus = reader.read(bufferFichier, 0, 1024)) > 0) {
-    			for (int i = 0; i < nbLus; i++) {
-    				convertisseur.putChar(bufferFichier[i]);
-    			}
-    			buffer = convertisseur.array();
-    			convertisseur.clear();
-        		serveurOS.write(buffer, 0, nbLus * (Character.SIZE / Byte.SIZE));
-    		} 
-    		reader.close();
+    		try {
+	    		if (commande == 1) {
+	    			hdfsWrite(serveurOS, nomFichier);
+	    		} else if (commande == 2) {
+	    			hdfsRead(serveurIS, nomFichier);
+	    		} 
+    		} catch (IOException e) {
+    			e.printStackTrace();
+    		}
+    		
+    		// Déconnexion
     		serveur.close();
     		serveurOS.close();
     		serveurIS.close();
         } catch (Exception e) {e.printStackTrace();}
     }
+    
+    public static void hdfsWrite(OutputStream serveurOS, String nomFichier) throws IOException {
+    	FileInputStream reader = new FileInputStream(nomFichier);
+		int nbLus;
+		byte[] buffer = new byte[1024];
+		while ((nbLus = reader.read(buffer)) > 0) {
+    		serveurOS.write(buffer, 0, nbLus);
+		} 
+		reader.close();
+    }
+    
+    public static void hdfsRead(InputStream serveurIS, String nomFichier) throws IOException {
+    	FileOutputStream writer = new FileOutputStream(nomFichier);
+		int nbLus;
+		byte[] buffer = new byte[1024];
+		while ((nbLus = serveurIS.read(buffer)) > 0) {
+    		writer.write(buffer, 0, nbLus);
+		} 
+		writer.close();
+    }
+    
 }
