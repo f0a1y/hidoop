@@ -14,6 +14,7 @@ public class CallBackImpl extends UnicastRemoteObject implements CallBack {
 		this.nbServeurs = n;
 		this.temoin = t;
 		this.s = new Semaphore(1);
+		
 	}
 
 	@Override

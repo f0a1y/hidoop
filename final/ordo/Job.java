@@ -8,10 +8,11 @@ import formats.KVFormat;
 import formats.LineFormat;
 import formats.Format.OpenMode;
 import formats.Format.Type;
-import hdfs.ClientHDFS;
+//import hdfs.ClientHDFS;
 import map.MapReduce;
 
 import java.rmi.registry.*;
+import java.net.InetAddress;
 import java.rmi.*;
 
 public class Job implements JobInterface {
@@ -51,8 +52,16 @@ public class Job implements JobInterface {
 			//objet permettant au callback de communiquer avec le job
 			Object temoin = new Object();
 			System.out.println(" Job2");
+
 			//Creer callbacks cb; 
 			CallBack cb = new CallBackImpl(Project.nbMachine, temoin);
+			System.out.println(" Job21");
+			//Registry registry = LocateRegistry.createRegistry(4000);
+			System.out.println(" Job2.2");
+			//String m = new String (InetAddress.getLocalHost().getHostName());
+			System.out.println(" Job2.3");
+			//Naming.rebind("//"+"localhost:4000"+"/Callback", cb);
+
 			System.out.println(" Job3");
 			// recupération des stubs sur les machines des clusters , voir pour faire directement en fonction de Projet.nbMachine
 				//nbMachine défini comme Project.nomDeamon.length
@@ -76,6 +85,7 @@ public class Job implements JobInterface {
 				System.out.println(" Job4"+i+"4");
 				*/
 				stubs[i] = (Daemon) Naming.lookup("//"+Project.nomMachine[i]+":"+Project.numPortHidoop[i]+"/Daemon");
+				if (stubs[i] == null) {System.out.println("null");}
 			}
 				
 
@@ -107,7 +117,7 @@ public class Job implements JobInterface {
 			System.out.println(" Job7");
 
 			//lecture des résultats avec hdfs
-			hdfs.serveur.ServerHDFS.recupererResultats(this.inputFname+"-resTemp");
+			//hdfs.serveur.ServerHDFS.recupererResultats(this.inputFname+"-resTemp");
 
 			System.out.println(" Job8");
 			//lancer le reduce
