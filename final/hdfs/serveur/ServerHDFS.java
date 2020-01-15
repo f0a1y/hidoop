@@ -4,7 +4,10 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.io.*;
 import java.util.*;
+
+import formats.Format.OpenMode;
 import formats.KV;
+import formats.KVFormat;
 
 public class ServerHDFS extends Thread {
 
@@ -204,8 +207,8 @@ public class ServerHDFS extends Thread {
     	return null;
     }
     
-    public static List<KV> recupererResultats(String nomFichier) {
-    	List<KV> resultats = null;
+    public static KVFormat recupererResultats(String nomFichier) {
+    	KVFormat editeur = null;
     	try {
 
         	// Connexion avec les noeuds du cluster
@@ -239,17 +242,18 @@ public class ServerHDFS extends Thread {
 	    	}
 	    	
 	        // Réception des fragments du fichier des noeuds dans l'ordre d'envoi
-	    	resultats = new ArrayList<>();
+	    	editeur = new KVFormat(nomFichier);
+	    	editeur.open(OpenMode.W);
 	        for (int i = 0; i < nbNodes; i++) {
 	        	KV fragment;
 		    	while ((fragment = recupererFragment(recepteursIS[i])) != null) {
-		    		resultats.add(fragment);
+		    		editeur.write(fragment);
 		    	}
 	        }
         } catch (Exception e) {
         	e.printStackTrace();
         }
-		return resultats;
+		return editeur;
     }
 
     public static void lancer(String[] args, ChoixFragmenteur choixFragmenteur) {
