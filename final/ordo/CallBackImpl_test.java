@@ -20,6 +20,7 @@ public class CallBackImpl extends UnicastRemoteObject implements CallBack {
 	@Override
 	public void MapFinished() throws RemoteException {
 
+		System.out.println(" CallBack1");
 		try{
 			//permet un accès exclusif à la décrémentation
 			s.acquire();
@@ -29,11 +30,15 @@ public class CallBackImpl extends UnicastRemoteObject implements CallBack {
 
 
 		// décrémentation du nombre de map en cours
+		System.out.println(" CallBack2");
 		nbServeurs--;
+		System.out.println(" CallBack3");
+
 
 		// Quand tout les map sont terminé, le CallBack réveille le Job
 		if (nbServeurs == 0) {
 			synchronized (temoin) {temoin.notify(); }	//Reveiller le thread principal 
+			System.out.println(" CallBack Reveil");
 		}
 
 

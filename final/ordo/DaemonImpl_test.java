@@ -2,7 +2,6 @@ package ordo;
 
 import java.rmi.*;
 import java.rmi.registry.*;
-//import java.rmi.server.useLocalHostname;
 import java.rmi.server.UnicastRemoteObject ;
 
 import java.net.InetAddress;
@@ -33,13 +32,19 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 	//methode distante
 	@Override
 	public void runMap(final Mapper m, final Format reader, final Format writer, final CallBack cb) throws RemoteException {
+		System.out.println(" deamon1");
 
 		// crée un thread secondaire qui execute de map pendant qu'on redonne la main au programme principal
 		Thread t = new Thread() {
 
 			public void run() {
 				try {
+					System.out.println(" deamon4"); 
+
 					mapInterne(m, reader, writer, cb);
+
+					System.out.println(" deamon9");
+
 				} catch (RemoteException e) {
 					System.out.println(" deamon_problème sur le Runmap");
 					e.printStackTrace();
@@ -49,30 +54,37 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 		};
 
 		//lancement du thread secondaire
+		System.out.println(" deamon2"); 
 		t.start(); 
+		System.out.println(" deamon3"); 
 		
 	}
 
 
 	public void mapInterne (Mapper m, Format reader, Format writer, CallBack cb) throws RemoteException {
-		try {	
-
+		try {
+			
 			//Ouverture du reader et du writer
+			System.out.println(" deamon5"); 
 			reader.open(OpenMode.R);
 			writer.open(OpenMode.W);
+			System.out.println(" deamon6"); 
 
 
 			//Appel de la fonction map
 			m.map(reader, writer);
+			System.out.println(" deamon7");
 			
 
 			//Fermeture du reader et du writer
 			reader.close();
 			writer.close();
+			System.out.println(" deamon8");
 			
 
 			//appel du callback à la fin de l'exécution
 			cb.MapFinished();
+			System.out.println(" deamon9"); 
 
 
 		} catch (Exception e) {
