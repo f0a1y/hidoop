@@ -5,17 +5,14 @@ import java.nio.ByteBuffer;
 import java.io.*;
 import java.util.*;
 
-import formats.Format.OpenMode;
+import config.Project;
+import formats.FormatWriter;
 import formats.KV;
-import formats.KVFormat;
 
 public class ServerHDFS extends Thread {
 
-    static String hosts[];
-    static int ports[];
-    static int nbNodes;
     static HashMap<String, List<Integer>> registre;
-    static ChoixFragmenteur choix;
+    static ChoixFragmenteurBasique choix;
     static Random rand = new Random();
     private Socket emetteur;
 
@@ -30,11 +27,11 @@ public class ServerHDFS extends Thread {
         	// Connexion avec les noeuds du cluster
             OutputStream emetteurOS = this.emetteur.getOutputStream();
             InputStream emetteurIS = this.emetteur.getInputStream();
-            Socket[] nodes = new Socket[nbNodes];
-            OutputStream[] recepteursOS = new OutputStream[3];
-            InputStream[] recepteursIS = new InputStream[3];
-            for (int i = 0; i < nbNodes; i++) {
-                nodes[i] = new Socket(hosts[i], ports[i]);
+            Socket[] nodes = new Socket[Project.nbMachine];
+            OutputStream[] recepteursOS = new OutputStream[Project.nbMachine];
+            InputStream[] recepteursIS = new InputStream[Project.nbMachine];
+            for (int i = 0; i < Project.nbMachine; i++) {
+                nodes[i] = new Socket(Project.nomMachine[i], Project.numPortHDFS[i]);
                 recepteursOS[i] = nodes[i].getOutputStream();
                 recepteursIS[i] = nodes[i].getInputStream();
             }
@@ -62,15 +59,15 @@ public class ServerHDFS extends Thread {
             } else {
             	
 	        	// Envoie de la commande aux noeuds du cluster
-	        	for (int i = 0; i < nbNodes; i++) {
+	        	for (int i = 0; i < Project.nbMachine; i++) {
 	        		recepteursOS[i].write(bufferCommande, 0, Integer.BYTES);
 	        	}
 	
 	        	// Envoie du nom du fichier aux noeuds du cluster
-	        	for (int i = 0; i< nbNodes; i++) {
+	        	for (int i = 0; i< Project.nbMachine; i++) {
 	        		recepteursOS[i].write(bufferTailleNomFichier, 0, Integer.BYTES);
 	        	}
-	        	for (int i = 0; i< nbNodes; i++) {
+	        	for (int i = 0; i< Project.nbMachine; i++) {
 	        		recepteursOS[i].write(bufferNomFichier, 0, tailleNomFichier);
 	        	}
 	        	
@@ -93,12 +90,14 @@ public class ServerHDFS extends Thread {
 	            	} else {
 	            		System.out.println("Le fichier " + nomFichier + "n'est pas enregistré sur le serveur");
 	            	}
+	            } else if (commande == 3) {
+	            	registre.remove(nomFichier);
 	            }
 	            
 	            // Déconnexion
 	            emetteurOS.close();
 	            emetteurIS.close();
-	            for (int i = 0; i < nbNodes; i++) {
+	            for (int i = 0; i < Project.nbMachine; i++) {
 	            	nodes[i].close();
 	            	recepteursOS[i].close();
 	            	recepteursIS[i].close();
@@ -147,7 +146,7 @@ public class ServerHDFS extends Thread {
     
     private void envoyerFragment(OutputStream[] recepteursOS, byte[] fragment, int longueur, List<Integer> ordre) throws IOException  {
         ByteBuffer convertisseur = ByteBuffer.allocate(Integer.BYTES);
-        int node = rand.nextInt(nbNodes);
+        int node = rand.nextInt(Project.nbMachine);
 		ordre.add(node);
 		convertisseur.putInt(ordre.size());
         recepteursOS[node].write(convertisseur.array());
@@ -207,16 +206,15 @@ public class ServerHDFS extends Thread {
     	return null;
     }
     
-    public static KVFormat recupererResultats(String nomFichier) {
-    	KVFormat editeur = null;
+    public static void recupererResultats(String nomFichier, FormatWriter editeur) {
     	try {
 
         	// Connexion avec les noeuds du cluster
-	    	Socket[] nodes = new Socket[nbNodes];
-	        OutputStream[] recepteursOS = new OutputStream[nbNodes];
-	        InputStream[] recepteursIS = new InputStream[nbNodes];
-	        for (int i = 0; i < nbNodes; i++) {
-	            nodes[i] = new Socket(hosts[i], ports[i]);
+	    	Socket[] nodes = new Socket[Project.nbMachine];
+	        OutputStream[] recepteursOS = new OutputStream[Project.nbMachine];
+	        InputStream[] recepteursIS = new InputStream[Project.nbMachine];
+	        for (int i = 0; i < Project.nbMachine; i++) {
+	            nodes[i] = new Socket(Project.nomMachine[i], Project.numPortHDFS[i]);
 	            recepteursOS[i] = nodes[i].getOutputStream();
 	            recepteursIS[i] = nodes[i].getInputStream();
 	        }
@@ -225,7 +223,7 @@ public class ServerHDFS extends Thread {
 	    	ByteBuffer convertisseur = ByteBuffer.allocate(Integer.BYTES);
 	    	convertisseur.putInt(2);
 	        byte[] buffer = convertisseur.array();
-	    	for (int i = 0; i< nbNodes; i++) {
+	    	for (int i = 0; i< Project.nbMachine; i++) {
 	    		recepteursOS[i].write(buffer, 0, buffer.length);
 	    	}
 	    	
@@ -233,18 +231,16 @@ public class ServerHDFS extends Thread {
 			convertisseur.clear();
 			convertisseur.putInt(nomFichier.length());
 	        buffer = convertisseur.array();
-	    	for (int i = 0; i< nbNodes; i++) {
+	    	for (int i = 0; i< Project.nbMachine; i++) {
 	    		recepteursOS[i].write(buffer, 0, buffer.length);
 	    	}
 	        buffer = nomFichier.getBytes();
-	    	for (int i = 0; i< nbNodes; i++) {
+	    	for (int i = 0; i< Project.nbMachine; i++) {
 	    		recepteursOS[i].write(buffer, 0, buffer.length);
 	    	}
 	    	
 	        // Réception des fragments du fichier des noeuds dans l'ordre d'envoi
-	    	editeur = new KVFormat(nomFichier);
-	    	editeur.open(OpenMode.W);
-	        for (int i = 0; i < nbNodes; i++) {
+	        for (int i = 0; i < Project.nbMachine; i++) {
 	        	KV fragment;
 		    	while ((fragment = recupererFragment(recepteursIS[i])) != null) {
 		    		editeur.write(fragment);
@@ -253,48 +249,37 @@ public class ServerHDFS extends Thread {
         } catch (Exception e) {
         	e.printStackTrace();
         }
-		return editeur;
     }
 
-    public static void lancer(String[] args, ChoixFragmenteur choixFragmenteur) {
-        try {
-        	if (args.length == 2) {
-	        	hosts = args[0].split(" ");
-	        	nbNodes = hosts.length;
-	        	String[] portsNom = args[1].split(" ");
-	        	if (portsNom.length == nbNodes) {
-	            	ports = new int[hosts.length];
-		        	for (int i = 0; i < portsNom.length; i++) {
-		        		ports[i] = Integer.parseInt(portsNom[i]);
-		        	}
-		        	
-		        	// Création de la collection contenant les ordres d'envoi des fragments dans les noeuds par fichier
-		        	File fichier = new File("registre.ser"); 
-		            if (fichier.exists()) {
-		            	try {
-		                   ObjectInputStream objectIS = new ObjectInputStream(new FileInputStream("registre.ser"));
-		                   registre = (HashMap<String, List<Integer>>)objectIS.readObject();
-		                   objectIS.close();
-		                } catch(IOException e) {
-		                   e.printStackTrace();
-		                   return;
-		                }
-		            } else {
-		            	registre = new HashMap<>();
-		            }
-		            
-		            // Objet permettant de récupérer le fragmenteur adapté au fichier
-		            choix = choixFragmenteur;
-		            
-		            // Attente d'un client
-		            ServerSocket client = new ServerSocket(8080);
-		            while (true) {
-		                ServerHDFS serveur = new ServerHDFS(client.accept());
-		                serveur.start();
-		            }
-	        	}
-        	}
-        } catch (Exception e) {e.printStackTrace();}
+    public static void main(String[] args) {
+    	try {
+
+    		// Création de la collection contenant les ordres d'envoi des fragments dans les noeuds par fichier
+    		File fichier = new File("registre.ser"); 
+    		if (fichier.exists()) {
+    			try {
+    				ObjectInputStream objectIS = new ObjectInputStream(new FileInputStream("registre.ser"));
+    				registre = (HashMap<String, List<Integer>>)objectIS.readObject();
+    				objectIS.close();
+    			} catch(IOException e) {
+    				e.printStackTrace();
+    				return;
+    			}
+    		} else {
+    			registre = new HashMap<>();
+    		}
+
+    		// Objet permettant de récupérer le fragmenteur adapté au fichier
+    		choix = new ChoixFragmenteurBasique(1024);
+
+    		// Attente d'un client
+    		ServerSocket client = new ServerSocket(8080);
+    		while (true) {
+    			ServerHDFS serveur = new ServerHDFS(client.accept());
+    			serveur.start();
+    		}
+    		
+    	} catch (Exception e) {e.printStackTrace();}
     }
 
 } 
