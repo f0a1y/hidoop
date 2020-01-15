@@ -8,7 +8,7 @@ import formats.KVFormat;
 import formats.LineFormat;
 import formats.Format.OpenMode;
 import formats.Format.Type;
-import hdfs.HdfsClient;
+import hdfs.ClientHDFS;
 import map.MapReduce;
 
 import java.rmi.registry.*;
@@ -107,7 +107,7 @@ public class Job implements JobInterface {
 			System.out.println(" Job7");
 
 			//lecture des résultats avec hdfs
-			//hdfs.ServerHDFS.recupererResutats(this.inputFname, "-resTemp");
+			hdfs.serveur.ServerHDFS.recupererResultats(this.inputFname+"-resTemp");
 
 			System.out.println(" Job8");
 			//lancer le reduce
