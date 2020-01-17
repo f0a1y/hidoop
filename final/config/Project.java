@@ -15,6 +15,8 @@ public class Project {
     // en l'état, fonctionne pour 2 machines
     public static int nbMachine = 2 ;
 
+    public static int BytesInt = Integer.SIZE/Byte.SIZE;
+
     public static String PATH = "~/Documents/Annee_2/hidoop/final";
 
 

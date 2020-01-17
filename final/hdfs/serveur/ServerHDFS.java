@@ -37,14 +37,14 @@ public class ServerHDFS extends Thread {
             }
             
             // Réception commande
-            byte[] bufferCommande = new byte[Integer.BYTES];
-            emetteurIS.read(bufferCommande, 0, Integer.BYTES);
+            byte[] bufferCommande = new byte[Project.BytesInt];
+            emetteurIS.read(bufferCommande, 0, Project.BytesInt);
             ByteBuffer convertisseur = ByteBuffer.wrap(bufferCommande);
             int commande = convertisseur.getInt(); 
         	
             // Réception du nom du fichier
-            byte[] bufferTailleNomFichier = new byte[Integer.BYTES];
-            emetteurIS.read(bufferTailleNomFichier, 0, Integer.BYTES);
+            byte[] bufferTailleNomFichier = new byte[Project.BytesInt];
+            emetteurIS.read(bufferTailleNomFichier, 0, Project.BytesInt);
             convertisseur.clear();
             convertisseur = ByteBuffer.wrap(bufferTailleNomFichier);
             int tailleNomFichier = convertisseur.getInt();
@@ -60,12 +60,12 @@ public class ServerHDFS extends Thread {
             	
 	        	// Envoie de la commande aux noeuds du cluster
 	        	for (int i = 0; i < Project.nbMachine; i++) {
-	        		recepteursOS[i].write(bufferCommande, 0, Integer.BYTES);
+	        		recepteursOS[i].write(bufferCommande, 0, Project.BytesInt);
 	        	}
 	
 	        	// Envoie du nom du fichier aux noeuds du cluster
 	        	for (int i = 0; i< Project.nbMachine; i++) {
-	        		recepteursOS[i].write(bufferTailleNomFichier, 0, Integer.BYTES);
+	        		recepteursOS[i].write(bufferTailleNomFichier, 0, Project.BytesInt);
 	        	}
 	        	for (int i = 0; i< Project.nbMachine; i++) {
 	        		recepteursOS[i].write(bufferNomFichier, 0, tailleNomFichier);
@@ -145,7 +145,7 @@ public class ServerHDFS extends Thread {
     }
     
     private void envoyerFragment(OutputStream[] recepteursOS, byte[] fragment, int longueur, List<Integer> ordre) throws IOException  {
-        ByteBuffer convertisseur = ByteBuffer.allocate(Integer.BYTES);
+        ByteBuffer convertisseur = ByteBuffer.allocate(Project.BytesInt);
         int node = rand.nextInt(Project.nbMachine);
 		ordre.add(node);
 		convertisseur.putInt(ordre.size());
@@ -191,7 +191,7 @@ public class ServerHDFS extends Thread {
     private static String recupererTexte(InputStream recepteurIS) throws IOException {
     	byte[] buffer = new byte[1024];
         int nbLus, taille;
-    	if ((nbLus = recepteurIS.read(buffer, 0, Integer.BYTES)) > 0) {
+    	if ((nbLus = recepteurIS.read(buffer, 0, Project.BytesInt)) > 0) {
             ByteBuffer convertisseur = ByteBuffer.wrap(buffer);
             taille = convertisseur.getInt();
             convertisseur.clear();
@@ -220,7 +220,7 @@ public class ServerHDFS extends Thread {
 	        }
 
 	    	// Envoie de la commande 2 (hdfsRead) aux noeuds du cluster
-	    	ByteBuffer convertisseur = ByteBuffer.allocate(Integer.BYTES);
+	    	ByteBuffer convertisseur = ByteBuffer.allocate(Project.BytesInt);
 	    	convertisseur.putInt(2);
 	        byte[] buffer = convertisseur.array();
 	    	for (int i = 0; i< Project.nbMachine; i++) {

@@ -17,7 +17,7 @@ public class ClientHDFS {
             Socket serveur = new Socket("localhost", 8080);
             OutputStream serveurOS = serveur.getOutputStream();
             InputStream serveurIS = serveur.getInputStream();
-            ByteBuffer convertisseur = ByteBuffer.allocate(Integer.BYTES);
+            ByteBuffer convertisseur = ByteBuffer.allocate(Project.BytesInt);
             
             // Envoie de la commande
             int commande = Integer.parseInt(args[0]);

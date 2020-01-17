@@ -30,13 +30,13 @@ public class DaemonHDFS extends Thread {
             InputStream emetteurIS = this.emetteur.getInputStream();
             
             // Réception de la commande
-            byte[] buffer = new byte[Integer.BYTES];
-            emetteurIS.read(buffer, 0, Integer.BYTES);
+            byte[] buffer = new byte[Project.BytesInt];
+            emetteurIS.read(buffer, 0, Project.BytesInt);
             ByteBuffer convertisseur = ByteBuffer.wrap(buffer);
             int commande = convertisseur.getInt();
             
             // Réception de la taille du nom du fichier
-            emetteurIS.read(buffer, 0, Integer.BYTES);
+            emetteurIS.read(buffer, 0, Project.BytesInt);
             convertisseur.clear();
             convertisseur = ByteBuffer.wrap(buffer);
             int tailleNomFichier = convertisseur.getInt();
@@ -68,7 +68,7 @@ public class DaemonHDFS extends Thread {
 		byte[] buffer = new byte[1024];
         ByteBuffer convertisseur;
         int nbLus, taille, ordre;
-    	while ((nbLus = emetteurIS.read(buffer, 0, Integer.BYTES)) > 0) {
+    	while ((nbLus = emetteurIS.read(buffer, 0, Project.BytesInt)) > 0) {
     		
     		// Réception de l'ordre
             convertisseur = ByteBuffer.wrap(buffer);
@@ -76,7 +76,7 @@ public class DaemonHDFS extends Thread {
             convertisseur.clear();
             
             //Réception de la taille du fragment
-            nbLus = emetteurIS.read(buffer, 0, Integer.BYTES);
+            nbLus = emetteurIS.read(buffer, 0, Project.BytesInt);
             convertisseur = ByteBuffer.wrap(buffer);
             taille = convertisseur.getInt();
             convertisseur.clear();
@@ -112,7 +112,7 @@ public class DaemonHDFS extends Thread {
     }
     
     private void envoyerTexte(OutputStream emetteurOS, String texte) throws IOException {
-        ByteBuffer convertisseur = ByteBuffer.allocate(Integer.BYTES);
+        ByteBuffer convertisseur = ByteBuffer.allocate(Project.BytesInt);
         byte[] bufferTexte = texte.getBytes();
 		convertisseur.putInt(bufferTexte.length);
 		byte[] bufferTaille = convertisseur.array();
