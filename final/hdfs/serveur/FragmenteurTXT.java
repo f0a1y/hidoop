@@ -1,7 +1,5 @@
 package hdfs.serveur;
 
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.List;
 
 public class FragmenteurTXT extends Fragmenteur {

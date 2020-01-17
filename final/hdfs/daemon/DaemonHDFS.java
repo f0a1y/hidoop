@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.io.*;
 import java.util.*;
 
+import config.Project;
 import formats.Format.OpenMode;
 import formats.KV;
 import formats.KVFormat;
@@ -13,10 +14,12 @@ public class DaemonHDFS extends Thread {
 
     static Random rand = new Random();
     private Socket emetteur;
+    private int identifiant;
 
-    public DaemonHDFS(Socket emetteur) {
+    public DaemonHDFS(Socket emetteur, int identifiant) {
         super();
         this.emetteur = emetteur;
+        this.identifiant = identifiant;
     }
 
     public void run() {
@@ -41,7 +44,7 @@ public class DaemonHDFS extends Thread {
             // Réception du nom du fichier
             buffer = new byte[tailleNomFichier];
             emetteurIS.read(buffer, 0, tailleNomFichier);
-            String nomFichier = new String(buffer);
+            String nomFichier = new String(buffer) + this.identifiant;
             
             if (commande == 1) {
             	this.hdfsWrite(nomFichier, emetteurIS);
@@ -93,16 +96,19 @@ public class DaemonHDFS extends Thread {
     }
     
     private void hdfsRead(String nomFichier, OutputStream emetteurOS) throws IOException {
-    	KVFormat lecteur = new KVFormat(nomFichier);
-    	lecteur.open(OpenMode.R);
-    	
-    	// Lecture du contenu du fichier
-    	KV fragment;
-    	while ((fragment = lecteur.read()) != null){
-            envoyerTexte(emetteurOS, fragment.k);
-    		envoyerTexte(emetteurOS, fragment.v);
-    	}
-    	lecteur.close();
+    	File fichier = new File(nomFichier); 
+	if (fichier.exists()) {
+		KVFormat lecteur = new KVFormat(nomFichier);
+	    	lecteur.open(OpenMode.R);
+	    	
+	    	// Lecture du contenu du fichier
+	    	KV fragment;
+	    	while ((fragment = lecteur.read()) != null){
+	            envoyerTexte(emetteurOS, fragment.k);
+	    		envoyerTexte(emetteurOS, fragment.v);
+	    	}
+	    	lecteur.close();
+	}
     }
     
     private void envoyerTexte(OutputStream emetteurOS, String texte) throws IOException {
@@ -121,11 +127,16 @@ public class DaemonHDFS extends Thread {
 
     public static void main(String[] args) {
         try {
-            ServerSocket client = new ServerSocket(Integer.parseInt(args[0]));
-            while (true) {
-                DaemonHDFS daemon = new DaemonHDFS(client.accept());
-                daemon.start();
-            }
+        	if (args.length == 1) {
+	            int identifiant = Integer.parseInt(args[0]);
+	            ServerSocket client = new ServerSocket(Project.numPortHDFS[identifiant]);
+	            while (true) {
+	                DaemonHDFS daemon = new DaemonHDFS(client.accept(), identifiant);
+	                daemon.start();
+	            }
+        	} else {
+        		System.out.println("Usage : java hdfs.daemon.DaemonHDFS <identifiant>");
+        	}
         } catch (Exception e) {e.printStackTrace();}
     }
 

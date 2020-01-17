@@ -6,6 +6,7 @@ import java.util.StringTokenizer;
 
 import map.MapReduce;
 import ordo.Job;
+import ordo.Job_test;
 import formats.Format;
 import formats.FormatReader;
 import formats.FormatWriter;
@@ -48,7 +49,7 @@ public class MapReduceImpl_test1 implements MapReduce {
 		System.out.println(" MapReduce1");
 
 		//création d'une instance de Job
-		Job j = new Job();
+		Job_test j = new Job_test();
 
 		System.out.println(" MapReduce2");
 

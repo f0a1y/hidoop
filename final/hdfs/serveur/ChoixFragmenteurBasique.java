@@ -1,10 +1,14 @@
 package hdfs.serveur;
 
-public class ChoixFragmenteur implements ChoixFragmenteurI {
+public class ChoixFragmenteurBasique implements ChoixFragmenteurI {
 
 	private int tailleFragment;
 	
-	public ChoixFragmenteur(int tailleFragment) {
+	public ChoixFragmenteurBasique(int tailleFragment) {
+		this.tailleFragment = tailleFragment;
+	}
+	
+	public void setTailleFragment(int tailleFragment) {
 		this.tailleFragment = tailleFragment;
 	}
 	
