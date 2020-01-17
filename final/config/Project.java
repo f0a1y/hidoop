@@ -6,7 +6,7 @@ public class Project {
    //public static String nomMachine[] = {"localhost", "localhost", "localhost"};
 
     //Pour un hidoop fonctionnant sur plusieurs machines
-    public static String nomMachine1[] = {"Griffon", "Pixie"};
+    public static String nomMachine1[] = {"localhost","Griffon", "Pixie"};
 
     // des ports pour 5 machines
     public static int numPortHidoop[] = {4500, 4501, 4502, 4503, 4504, 4505};
