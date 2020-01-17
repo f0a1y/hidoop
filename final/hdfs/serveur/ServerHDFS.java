@@ -31,7 +31,7 @@ public class ServerHDFS extends Thread {
             OutputStream[] recepteursOS = new OutputStream[Project.nbMachine];
             InputStream[] recepteursIS = new InputStream[Project.nbMachine];
             for (int i = 0; i < Project.nbMachine; i++) {
-                nodes[i] = new Socket(Project.nomMachine1[i], Project.numPortHDFS[i]);
+                nodes[i] = new Socket(Project.nomMachine[i+1], Project.numPortHDFS[i+1]);
                 recepteursOS[i] = nodes[i].getOutputStream();
                 recepteursIS[i] = nodes[i].getInputStream();
             }
@@ -214,7 +214,7 @@ public class ServerHDFS extends Thread {
 	        OutputStream[] recepteursOS = new OutputStream[Project.nbMachine];
 	        InputStream[] recepteursIS = new InputStream[Project.nbMachine];
 	        for (int i = 0; i < Project.nbMachine; i++) {
-	            nodes[i] = new Socket(Project.nomMachine[i], Project.numPortHDFS[i]);
+	            nodes[i] = new Socket(Project.nomMachine[i+1], Project.numPortHDFS[i+1]);
 	            recepteursOS[i] = nodes[i].getOutputStream();
 	            recepteursIS[i] = nodes[i].getInputStream();
 	        }
