@@ -9,8 +9,8 @@ public class Project {
     public static String nomMachine[] = {"localhost", "Griffon", "Pixie"};
 
     // des ports pour 5 machines
-    public static int numPortHidoop[] = {4000, 4001, 4002, 4003, 4004, 4005};
-    public static int numPortHDFS[] = {4000, 4101, 4102, 4103, 4104, 4105};
+    public static int numPortHidoop[] = {4500, 4501, 4502, 4503, 4504, 4505};
+    public static int numPortHDFS[] = {4100, 4101, 4102, 4103, 4104, 4105};
 
     // en l'état, fonctionne pour 2 machines
     public static int nbMachine = 2 ;
