@@ -4,13 +4,13 @@ import java.util.concurrent.Semaphore;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
 
-public class CallBackImpl extends UnicastRemoteObject implements CallBack {
+public class CallBackImpl_test extends UnicastRemoteObject implements CallBack {
 	
 	private int nbServeurs;
 	private Object temoin;
 	private Semaphore s;
 	
-	public CallBackImpl(int n, Object t) throws RemoteException {
+	public CallBackImpl_test(int n, Object t) throws RemoteException {
 		this.nbServeurs = n;
 		this.temoin = t;
 		this.s = new Semaphore(1);

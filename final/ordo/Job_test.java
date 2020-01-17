@@ -15,7 +15,7 @@ import java.rmi.registry.*;
 import java.net.InetAddress;
 import java.rmi.*;
 
-public class Job implements JobInterface {
+public class Job_test implements JobInterface {
 
 		//Format d'entrée
 		private Format.Type inputFormat;
@@ -26,7 +26,7 @@ public class Job implements JobInterface {
 
 
 	//Constructeur
-	public Job() {
+	public Job_test() {
 		//valleurs pour l'exemple du sujet
 		this.inputFormat = Format.Type.LINE;  
 		this.inputFname = "";;
@@ -62,7 +62,7 @@ public class Job implements JobInterface {
 			System.out.println(" Job3");
 
 			// recupération des stubs sur les machines des clusters
-			Daemon_test stubs[] = new Daemon_test[Project.nbMachine+1];
+			Daemon stubs[] = new Daemon[Project.nbMachine+1];
 			for (int i = 1; i < Project.nbMachine + 1; i++) {
 
 				System.out.println(" Job4"+i);

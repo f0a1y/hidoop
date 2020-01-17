@@ -15,13 +15,13 @@ import formats.Format.OpenMode;
 import formats.Format.Type;
 
 
-public class DaemonImpl extends UnicastRemoteObject implements Daemon {
+public class DaemonImpl_test extends UnicastRemoteObject implements Daemon {
 	
 	private int id;
 
 
 	//constructeur
-	public DaemonImpl( int i) throws RemoteException {
+	public DaemonImpl_test( int i) throws RemoteException {
 		this.id = i;
 	
 	}
@@ -127,7 +127,7 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 
 		//enregistrement auprès du serveur de nom
 		try{
-			Naming.rebind("//"+machine+":"+port+"/Daemon", new DaemonImpl(id));
+			Naming.rebind("//"+machine+":"+port+"/Daemon", new DaemonImpl_test(id));
 			System.out.println("le Daemon numero "+id+" est lancé sur la machine "+machine+ ", au port "+port);
 		
 		} catch (Exception e) {
