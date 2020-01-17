@@ -79,11 +79,13 @@ public class Job implements JobInterface {
 				switch(inputFormat)	{
 
 					case KV : 
-					stubs[i].runMap(mr, new KVFormat(this.inputFname), new KVFormat(this.inputFname+"-resTemp"), cb);
+					
+					stubs[i].runMap(mr, new KVFormat(this.inputFname+i), new KVFormat(this.inputFname+"-resTemp"), cb);
 					break;
 
 					case LINE : 
-					stubs[i].runMap(mr, new LineFormat(this.inputFname), new KVFormat(this.inputFname+"-resTemp"), cb);
+					System.out.println(this.inputFname+i);
+					stubs[i].runMap(mr, new KVFormat(this.inputFname+i), new KVFormat(this.inputFname+"-resTemp"), cb);
 					break;
 
 					default :
