@@ -99,7 +99,7 @@ public class Job implements JobInterface {
 
 			//lecture des résultats avec hdfs
 			Format readerReduce = new KVFormat(this.inputFname+"-resTemp"); 
-			//hdfs.serveur.ServerHDFS.recupererResultats(this.inputFname+"-resTemp", readerReduce);
+			hdfs.serveur.ServerHDFS.recupererResultats(this.inputFname+"-resTemp", readerReduce);
 
 
 			//lancer le reduce 
