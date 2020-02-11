@@ -85,8 +85,8 @@ public class LineFormat implements Format {
 
     public void write(KV record) {
         try {
-            bw.write(record.v, 0, record.v.length());
-            bw.write(KV.SEPARATOR, 0, KV.SEPARATOR.length());
+            String ligne = record.v+KV.SEPARATOR;
+            bw.write(ligne, 0, ligne.length());
             bw.newLine();
             index += record.v.length();
         } catch (IOException e) {

@@ -12,11 +12,13 @@ public class KVFormat implements Format {
     private static final long serialVersionUID = 1L;
 
     private String fname;
+    private KV kv;
 
     private transient BufferedReader br;
     private transient BufferedWriter bw;
     private transient long index = 0;
     private transient Format.OpenMode mode;
+
 
     public KVFormat(String fname) {
         this.fname = fname;
@@ -25,6 +27,7 @@ public class KVFormat implements Format {
     public void open(OpenMode mode) {
         try {
             this.mode = mode;
+            this.kv = new KV();
             switch (mode) {
             case R:
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(fname)));
@@ -55,49 +58,29 @@ public class KVFormat implements Format {
 
     public KV read() {
         try {
-        	String cle = readTexte();
-        	if (cle != null) {
-        		String valeur = readTexte();
-        		index += cle.length() + valeur.length();
-        		return new KV(cle, valeur);
-        	}
-        	return null;
+            while (true) {
+                String l = br.readLine();
+                if (l == null) return null;
+                index += l.length();
+                String[] tokens = l.split(KV.SEPARATOR);
+                if (tokens.length != 2) continue;
+                kv.k = tokens[0];
+                kv.v = tokens[1];
+                return kv;
+            }
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
     }
-    
-    private String readTexte() throws IOException {
-    	StringBuilder texte = new StringBuilder();
-    	String ligne;
-    	do {
-    		ligne = br.readLine();
-    		if (ligne != null) {
-    			if (!ligne.endsWith(KV.SEPARATOR)) {
-    				texte.append(ligne + '\n');
-    			} else {
-    				texte.append(ligne.subSequence(0, ligne.length() - KV.SEPARATOR.length()));
-    			}
-    		}
-    	} while(ligne != null && !ligne.endsWith(KV.SEPARATOR));
-        if (ligne != null) {
-        	return texte.toString();
-        } 
-        return null;
-    }
 
     public void write(KV record) {
         try {
-        	String line = record.k + KV.SEPARATOR;
-        	bw.write(line, 0, line.length());
-            index += line.length();
-            bw.newLine();
-        	line = record.v + KV.SEPARATOR;
-            index += line.length();
-        	bw.write(line, 0, line.length());
+            String s = record.k+KV.SEPARATOR+record.v;
+            bw.write(s, 0, s.length());
             bw.newLine();
             bw.flush();
+            index += s.length();
         } catch (IOException e) {
             e.printStackTrace();
         }

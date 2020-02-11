@@ -8,24 +8,25 @@ import java.util.*;
 import config.Project;
 import formats.Format.OpenMode;
 import formats.KV;
-import formats.KVFormat;
+import formats.LineFormat;
 
 public class DaemonHDFS extends Thread {
 
+    static HashMap<String, List<Integer>> registre;
     static Random rand = new Random();
+    static int identifiant;
     private Socket emetteur;
-    private int identifiant;
+    
 
-    public DaemonHDFS(Socket emetteur, int identifiant) {
+    public DaemonHDFS(Socket emetteur) {
         super();
         this.emetteur = emetteur;
-        this.identifiant = identifiant;
     }
-
+    
     public void run() {
         try {
         	
-        	// Connexion avec le serveur
+        	// Connexion avec le client 
             OutputStream emetteurOS = this.emetteur.getOutputStream();
             InputStream emetteurIS = this.emetteur.getInputStream();
             
@@ -60,55 +61,73 @@ public class DaemonHDFS extends Thread {
         } catch (Exception e) {e.printStackTrace();}
     }
     
-    private void hdfsWrite(String nomFichier, InputStream emetteurIS) throws IOException {     
-    	KVFormat editeur = new KVFormat(nomFichier);
-    	editeur.open(OpenMode.W);
+    private void hdfsWrite(String nomFichier, InputStream emetteurIS) throws IOException {
     	
+    	// Liste de numéros des fragments du fichier
+    	List<Integer> numerosFragments = registre.get(nomFichier);
+		if (numerosFragments == null) {
+	        numerosFragments = new ArrayList<>();
+	        registre.put(nomFichier, numerosFragments);
+	    } else {
+			numerosFragments.clear();
+	    }
+	    
+	    // Dossier des fragments du fichier
+	    String nomDossier = Project.PATH + "data/" + nomFichier + "_" + identifiant + "/";
+	    File dossier = new File(nomDossier);
+		dossier.mkdir();
+		
         // Réception du contenu du fichier
 		byte[] buffer = new byte[1024];
         ByteBuffer convertisseur;
         int nbLus, taille, ordre;
-    	while ((nbLus = emetteurIS.read(buffer, 0, Project.BytesInt)) > 0) {
-    		
-    		// Réception de l'ordre
+    	while (emetteurIS.read(buffer, 0, Project.BytesInt) > 0) {
+            
+            // Réception de l'ordre du fragment
             convertisseur = ByteBuffer.wrap(buffer);
             ordre = convertisseur.getInt();
+            numerosFragments.add(ordre);
             convertisseur.clear();
             
-            //Réception de la taille du fragment
-            nbLus = emetteurIS.read(buffer, 0, Project.BytesInt);
+            // Réception de la taille du fragment
+            emetteurIS.read(buffer, 0, Project.BytesInt);
             convertisseur = ByteBuffer.wrap(buffer);
             taille = convertisseur.getInt();
             convertisseur.clear();
             
-            //Réception du fragment
+            // Réception du fragment
             StringBuilder texte = new StringBuilder();
             while (taille > 0) {
             	nbLus = emetteurIS.read(buffer, 0, Math.min(1024, taille));
             	taille -= nbLus;
             	texte.append(new String(buffer, 0, nbLus));
             }
-            editeur.write(new KV(Integer.toString(ordre), texte.toString()));
             
+            // Ecriture du fragment
+            LineFormat editeur = new LineFormat(nomDossier + ordre);
+			editeur.open(OpenMode.W);
+            editeur.write(new KV("0", texte.toString()));
+			editeur.close();
             texte.setLength(0);
     	}
-    	editeur.close();
     }
     
     private void hdfsRead(String nomFichier, OutputStream emetteurOS) throws IOException {
-    	File fichier = new File(nomFichier); 
-	if (fichier.exists()) {
-		KVFormat lecteur = new KVFormat(nomFichier);
-	    	lecteur.open(OpenMode.R);
-	    	
-	    	// Lecture du contenu du fichier
-	    	KV fragment;
-	    	while ((fragment = lecteur.read()) != null){
-	            envoyerTexte(emetteurOS, fragment.k);
-	    		envoyerTexte(emetteurOS, fragment.v);
-	    	}
-	    	lecteur.close();
-	}
+	    File dossier = new File(Project.PATH + "data/" + nomFichier + "_" + identifiant + "/");
+	    
+	    // Lecture des fragments
+	    if (dossier.exists()) {
+			for (File fichier : dossier.listFiles()) {
+				
+				// Lecture du contenu du fichier
+				LineFormat lecteur = new LineFormat(fichier.getAbsolutePath());
+				lecteur.open(OpenMode.R);
+				KV fragment = lecteur.read();
+				envoyerTexte(emetteurOS, fragment.k);
+				envoyerTexte(emetteurOS, fragment.v);
+				lecteur.close();
+			}
+		}
     }
     
     private void envoyerTexte(OutputStream emetteurOS, String texte) throws IOException {
@@ -121,17 +140,38 @@ public class DaemonHDFS extends Thread {
     }
     
     private void hdfsDelete(String nomFichier) {
-    	File fichier = new File(nomFichier);
-    	fichier.delete();
+    	File dossier = new File(Project.PATH + "data/" + nomFichier + "_" + identifiant + "/");
+	    if (dossier.exists()) {
+			for (File fichier : dossier.listFiles()) {
+				fichier.delete();
+			}
+		}
+    	dossier.delete();
     }
 
     public static void main(String[] args) {
         try {
         	if (args.length == 1) {
-	            int identifiant = Integer.parseInt(args[0]);
+	            identifiant = Integer.parseInt(args[0]);
+	            
+				// Création de la collection contenant les numéros des fragments par fichier
+				File fichier = new File("registre" + identifiant + ".ser"); 
+				if (fichier.exists()) {
+					try {
+						ObjectInputStream objectIS = new ObjectInputStream(new FileInputStream(fichier));
+						registre = (HashMap<String, List<Integer>>)objectIS.readObject();
+						objectIS.close();
+					} catch(IOException e) {
+						e.printStackTrace();
+						return;
+					}
+				} else {
+					registre = new HashMap<>();
+				}
+	            
 	            ServerSocket client = new ServerSocket(Project.numPortHDFS[identifiant]);
 	            while (true) {
-	                DaemonHDFS daemon = new DaemonHDFS(client.accept(), identifiant);
+	                DaemonHDFS daemon = new DaemonHDFS(client.accept());
 	                daemon.start();
 	            }
         	} else {

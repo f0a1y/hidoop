@@ -31,7 +31,7 @@ public class ServerHDFS extends Thread {
             OutputStream[] recepteursOS = new OutputStream[Project.nbMachine];
             InputStream[] recepteursIS = new InputStream[Project.nbMachine];
             for (int i = 0; i < Project.nbMachine; i++) {
-                nodes[i] = new Socket(Project.nomMachine[i+1], Project.numPortHDFS[i+1]);
+                nodes[i] = new Socket(Project.nomMachine[i], Project.numPortHDFS[i]);
                 recepteursOS[i] = nodes[i].getOutputStream();
                 recepteursIS[i] = nodes[i].getInputStream();
             }
@@ -150,34 +150,18 @@ public class ServerHDFS extends Thread {
 		ordre.add(node);
 		convertisseur.putInt(ordre.size());
         recepteursOS[node].write(convertisseur.array());
-		convertisseur.clear();
+        convertisseur.clear();
 		convertisseur.putInt(longueur);
         recepteursOS[node].write(convertisseur.array());
 		recepteursOS[node].write(fragment, 0, longueur);
     }
     
     public void hdfsRead(OutputStream emetteurOS, InputStream[] recepteursIS, List<Integer> ordre) throws IOException {
-    	HashMap<String, String> fragments = new HashMap<>();
-    	int compteur  = 1;
-        for (Integer i : ordre) {
-        	String indice = Integer.toString(compteur);
-    		if (fragments.containsKey(indice)) {
-    			byte[] buffer = fragments.get(indice).getBytes();
-            	emetteurOS.write(buffer, 0, buffer.length);
-    		} else {
-	        	KV fragment = recupererFragment(recepteursIS[i]);
-	        	if (fragment == null || !fragment.k.equals(indice)) {
-	        		System.out.println("La partie n°" + indice + " est indisponible");
-	        		if (fragment != null) {
-	        			fragments.put(fragment.k, fragment.v);
-	        		}
-	        	} else {
-	    			byte[] buffer = fragment.v.getBytes();
-	        		emetteurOS.write(buffer, 0, buffer.length);
-		    	}
-    		}
-    		compteur++;
-        }
+    	for (Integer i : ordre) {
+    		KV fragment = recupererFragment(recepteursIS[i]);
+    		byte[] buffer = fragment.v.getBytes();
+    		emetteurOS.write(buffer, 0, buffer.length);
+    	}
     }
     
     private static KV recupererFragment(InputStream recepteurIS) throws IOException {

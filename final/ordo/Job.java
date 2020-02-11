@@ -85,7 +85,7 @@ public class Job implements JobInterface {
 
 					case LINE : 
 					System.out.println(this.inputFname+i);
-					stubs[i].runMap(mr, new KVFormat(this.inputFname+i), new KVFormat(this.inputFname+"-resTemp"), cb);
+					stubs[i].runMap(mr, new LineFormat(this.inputFname+i), new KVFormat(this.inputFname+"-resTemp"), cb);
 					break;
 
 					default :
