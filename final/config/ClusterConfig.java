@@ -40,6 +40,14 @@ public class ClusterConfig {
     										  int id) {
     	return new DaemonActivityBasic(emitterStream, selector, id);
     }
+    
+    public static String fragmentToName(Integer fragment) {
+    	return fragment.toString();
+    }
+    
+    public static int nameToFragment(String name) {
+    	return Integer.parseInt(name);
+    }
 
     // Chemin du projet
     public final static String PATH = "/home/achatain/Documents/hidoop/";

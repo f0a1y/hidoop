@@ -80,8 +80,44 @@ public class ServerHDFS extends Thread {
         } catch (Exception e) {e.printStackTrace();}
     }
     
+    public static HashMap<Integer, List<Integer>> getFragmentData(String fileName) {
+		HashMap<Integer, List<Integer>> result = null;
+    	try {
+    		openRegister();
+
+        	// Connexion avec les noeuds du cluster
+        	Cluster cluster = new Cluster(ClusterConfig.nbMachine, 
+        								  ClusterConfig.nomMachine, 
+        								  ClusterConfig.numPortHDFS, 
+        								  ClusterConfig.redundancy);
+        	cluster.connect();
+
+	    	// Envoie de la command 4 (hdfsFragmentData) aux noeuds du cluster
+        	cluster.sendAllData(4);
+
+    		// Envoi du nom du fichier aux noeuds du cluster
+    		byte[] buffer = fileName.getBytes();
+    		cluster.sendAllData(buffer, buffer.length);
+
+    		// Réception des numéros des fragments de chaque noeud
+    		result = new HashMap<>();
+    		FileData data = register.get(fileName);
+    		for (Integer node : data.getNodesID()) {
+    			int numberFragmentsNode = cluster.receiveDataInt(node);
+    			List<Integer> fragmentsNode = new ArrayList<>();
+    			for (int i = 0; i < numberFragmentsNode; i++) {
+    				fragmentsNode.add(cluster.receiveDataInt(node));
+    			}
+    			result.put(node, fragmentsNode);
+    		}
+    
+    	} catch (Exception e) {e.printStackTrace();}
+    	return result;
+    }
+    
     public static void recupererResultats(String fileName, FormatWriter writer) {
     	try {
+    		openRegister();
 
         	// Connexion avec les noeuds du cluster
         	Cluster cluster = new Cluster(ClusterConfig.nbMachine, 
@@ -129,28 +165,29 @@ public class ServerHDFS extends Thread {
 							  			new String(cluster.receiveData(orders[i]))));
     			}
     		}
-        } catch (Exception e) {
-        	e.printStackTrace();
-        }
+        } catch (Exception e) {e.printStackTrace();}
     }    
+    
+    private static void openRegister() throws ClassNotFoundException {
+		// Création de la collection contenant les ordres d'envoi des fragments dans les noeuds par fichier
+		File fichier = new File("register.ser"); 
+		if (fichier.exists()) {
+			try {
+				ObjectInputStream objectIS = new ObjectInputStream(new FileInputStream("register.ser"));
+				register = (HashMap<String, FileData>)objectIS.readObject();
+				objectIS.close();
+			} catch(IOException e) {
+				e.printStackTrace();
+				return;
+			}
+		} else {
+			register = new HashMap<>();
+		}
+    }
 
     public static void main(String[] args) {
     	try {
-
-    		// Création de la collection contenant les ordres d'envoi des fragments dans les noeuds par fichier
-    		File fichier = new File("register.ser"); 
-    		if (fichier.exists()) {
-    			try {
-    				ObjectInputStream objectIS = new ObjectInputStream(new FileInputStream("register.ser"));
-    				register = (HashMap<String, FileData>)objectIS.readObject();
-    				objectIS.close();
-    			} catch(IOException e) {
-    				e.printStackTrace();
-    				return;
-    			}
-    		} else {
-    			register = new HashMap<>();
-    		}
+    		openRegister();
 
     		// Attente d'un client
     		ServerSocket serveurPrimaire = new ServerSocket(GeneralConfig.port);
