@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import config.Project;
+import config.ClusterConfig;
 import formats.KV;
 
 public class Count {
@@ -27,7 +27,7 @@ public class Count {
             long t1 = System.currentTimeMillis();
 
 			Map<String,Integer> hm = new HashMap<>();
-			LineNumberReader lnr = new LineNumberReader(new InputStreamReader(new FileInputStream(Project.PATH+"data/"+args[0])));
+			LineNumberReader lnr = new LineNumberReader(new InputStreamReader(new FileInputStream(ClusterConfig.PATH+"data/"+args[0])));
 			while (true) {
 				String l = lnr.readLine();
 				if (l == null) break;

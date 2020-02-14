@@ -2,7 +2,7 @@ package ordo;
 
 // pour compiler : se placer dans build puis javac ~/2A/hidoop/git/hidoop/hidoop/src/*/*.java
 
-import config.Project;
+import config.ClusterConfig;
 import formats.Format;
 import formats.KVFormat;
 import formats.LineFormat;
@@ -54,27 +54,27 @@ public class Job implements JobInterface {
 
 
 			//Creer callbacks cb; 
-			CallBack cb = new CallBackImpl(Project.nbMachine, temoin);
+			CallBack cb = new CallBackImpl(ClusterConfig.nbMachine, temoin);
 
 
 			// recupération des stubs sur les machines des clusters
-			Daemon stubs[] = new Daemon[Project.nbMachine+1];
-			for (int i = 1; i < Project.nbMachine + 1; i++) {
+			Daemon stubs[] = new Daemon[ClusterConfig.nbMachine];
+			for (int i = 0; i < ClusterConfig.nbMachine; i++) {
 
-				int port =config.Project.numPortHidoop[i];
-				String machine = new String(config.Project.nomMachine[i]);
+				int port = config.ClusterConfig.numPortHidoop[i];
+				String machine = new String(config.ClusterConfig.nomMachine[i]);
 
 
-				System.out.println(config.Project.nomMachine[i]);
+				System.out.println(config.ClusterConfig.nomMachine[i]);
 
-				stubs[i] = (Daemon) Naming.lookup("//"+Project.nomMachine[i]+":"+Project.numPortHidoop[i]+"/Daemon");
+				stubs[i] = (Daemon) Naming.lookup("//"+ClusterConfig.nomMachine[i]+":"+ClusterConfig.numPortHidoop[i]+"/Daemon");
 				
 			}
 				
 
 
 			// lancement en parallèle des maps sur les différents daemons
-			for (int i = 1; i < Project.nbMachine + 1; i++) {
+			for (int i = 0; i < ClusterConfig.nbMachine; i++) {
 
 				switch(inputFormat)	{
 
@@ -101,7 +101,7 @@ public class Job implements JobInterface {
 
 			//lecture des résultats avec hdfs
 			Format readerReduce = new KVFormat(this.inputFname+"-resTemp"); 
-			hdfs.serveur.ServerHDFS.recupererResultats(this.inputFname+"-resTemp", readerReduce);
+			hdfs.server.ServerHDFS.recupererResultats(this.inputFname+"-resTemp", readerReduce);
 
 
 			//lancer le reduce 

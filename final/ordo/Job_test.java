@@ -2,7 +2,7 @@ package ordo;
 
 // pour compiler : se placer dans build puis javac ~/2A/hidoop/git/hidoop/hidoop/src/*/*.java
 
-import config.Project;
+import config.ClusterConfig;
 import formats.Format;
 import formats.KVFormat;
 import formats.LineFormat;
@@ -56,28 +56,28 @@ public class Job_test implements JobInterface {
 			System.out.println(" Job2");
 
 			//Creer callbacks cb; 
-			CallBack cb = new CallBackImpl_test (Project.nbMachine, temoin);
+			CallBack cb = new CallBackImpl_test (ClusterConfig.nbMachine, temoin);
 
 
 			System.out.println(" Job3");
 
 			// recupération des stubs sur les machines des clusters
-			Daemon stubs[] = new Daemon[Project.nbMachine+1];
-			for (int i = 1; i < Project.nbMachine + 1; i++) {
+			Daemon stubs[] = new Daemon[ClusterConfig.nbMachine+1];
+			for (int i = 1; i < ClusterConfig.nbMachine + 1; i++) {
 
 				System.out.println(" Job4"+i);
 
-				int port =config.Project.numPortHidoop[i];
-				String machine = new String(config.Project.nomMachine[i]);
+				int port =config.ClusterConfig.numPortHidoop[i];
+				String machine = new String(config.ClusterConfig.nomMachine[i]);
 
 				System.out.println(" Job4"+i+"1");
 
-				System.out.println(config.Project.nomMachine[i]);
+				System.out.println(config.ClusterConfig.nomMachine[i]);
 
 				System.out.println(" Job4"+i+"2");
 
 
-				stubs[i] = (Daemon) Naming.lookup("//"+Project.nomMachine[i]+":"+Project.numPortHidoop[i]+"/Daemon");
+				stubs[i] = (Daemon) Naming.lookup("//"+ClusterConfig.nomMachine[i]+":"+ClusterConfig.numPortHidoop[i]+"/Daemon");
 				
 				if (stubs[i] == null) {System.out.println("Job4_null");}
 			}
@@ -88,7 +88,7 @@ public class Job_test implements JobInterface {
 
 
 			// lancement en parallèle des maps sur les différents daemons
-			for (int i = 1; i < Project.nbMachine + 1; i++) {
+			for (int i = 1; i < ClusterConfig.nbMachine + 1; i++) {
 
 				System.out.println(" switch 0");
 

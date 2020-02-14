@@ -105,7 +105,7 @@ public class DaemonImpl_test extends UnicastRemoteObject implements Daemon {
 
 
 			 //récupération du numéro de port correspondant
-			 int port =config.Project.numPortHidoop[id];
+			 int port =config.ClusterConfig.numPortHidoop[id];
 
 
 			 //récupération du nom complet de la machine surlequel est lancé le daemon
