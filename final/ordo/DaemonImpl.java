@@ -66,7 +66,7 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 				Integer i = it.next();
 
 				//création du fragment résultat
-				String emplacementWriter = ClusterConfig.PATH + "data/" + inputFname+ "_" + this.id + suffixeResultat + "/" +  ClusterConfig.fragmentToName(i);
+				String emplacementWriter = ClusterConfig.PATH + "data/" + inputFname + suffixeResultat+ "_" + this.id + "/" +  ClusterConfig.fragmentToName(i);
 				Format writer = new KVFormat(emplacementWriter);
 
 				//appel du fragment à étudier
