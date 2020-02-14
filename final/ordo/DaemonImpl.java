@@ -6,14 +6,16 @@ import java.rmi.registry.*;
 import java.rmi.server.UnicastRemoteObject ;
 
 import java.net.InetAddress;
+import java.util.List;
+import java.util.ListIterator;
 
 import map.*;
 import config.*  ;
 import formats.Format;
-
-
 import formats.Format.OpenMode;
 import formats.Format.Type;
+import formats.KVFormat;
+import formats.LineFormat;
 
 
 public class DaemonImpl extends UnicastRemoteObject implements Daemon {
@@ -32,14 +34,14 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 
 	//methode distante
 	@Override
-	public void runMap(final Mapper m, final Format reader, final Format writer, final CallBack cb) throws RemoteException {
+	public void runMap(final Mapper m, final Format.Type  inputFormat, final String inputFname, final String suffixeResultat, final CallBack cb, final List<Integer> numFragment) throws RemoteException {
 
 		// crée un thread secondaire qui execute de map pendant qu'on redonne la main au programme principal
 		Thread t = new Thread() {
 
 			public void run() {
 				try {
-					mapInterne(m, reader, writer, cb);
+					mapInterne(m, inputFormat, inputFname, suffixeResultat, cb, numFragment);
 				} catch (RemoteException e) {
 					System.out.println(" deamon_problème sur le Runmap");
 					e.printStackTrace();
@@ -54,22 +56,51 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 	}
 
 
-	public void mapInterne (Mapper m, Format reader, Format writer, CallBack cb) throws RemoteException {
+	public void mapInterne (Mapper m, Format.Type  inputFormat, String inputFname, String suffixeResultat, CallBack cb, List<Integer> numFragment) throws RemoteException {
 		try {	
+			ListIterator<Integer> it = numFragment.listIterator();
 
-			//Ouverture du reader et du writer
-			reader.open(OpenMode.R);
-			writer.open(OpenMode.W);
+			while (it.hasNext()) {
+
+				//numero du fragment à traiter
+				Integer i = it.next();
+
+				//création du fragment résultat
+				String emplacementWriter = ClusterConfig.PATH + "data/" + inputFname+ "_" + this.id + suffixeResultat + "/" +  ClusterConfig.fragmentToName(i);
+				Format writer = new KVFormat(emplacementWriter);
+
+				//appel du fragment à étudier
+				String emplacementReader = ClusterConfig.PATH + "data/" + inputFname + "_" + this.id +"/" + ClusterConfig.fragmentToName(i);
+				Format reader;
+				switch(inputFormat)	{
+
+					case KV : 
+					reader = new KVFormat(emplacementReader);
+					break;
+	
+					case LINE : 
+					reader = new LineFormat(emplacementReader);
+					break;
+	
+					default :
+					reader = new KVFormat(emplacementReader); // pour que ça compile
+					System.out.println(" probleme de format dans le mapInterne");
+				}
 
 
-			//Appel de la fonction map
-			m.map(reader, writer);
-			
+				//Ouverture du reader et du writer
+				reader.open(OpenMode.R);
+				writer.open(OpenMode.W);
 
-			//Fermeture du reader et du writer
-			reader.close();
-			writer.close();
-			
+
+				//Appel de la fonction map
+				m.map(reader, writer);
+				
+
+				//Fermeture du reader et du writer
+				reader.close();
+				writer.close();
+			}
 
 			//appel du callback à la fin de l'exécution
 			cb.MapFinished();

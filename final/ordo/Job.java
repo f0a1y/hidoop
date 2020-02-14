@@ -9,9 +9,14 @@ import formats.LineFormat;
 import formats.Format.OpenMode;
 import formats.Format.Type;
 import hdfs.ClientHDFS;
+import hdfs.server.ServerHDFS;
 import map.MapReduce;
 
 import java.rmi.registry.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.Iterator;
 import java.net.InetAddress;
 import java.rmi.*;
 
@@ -22,6 +27,9 @@ public class Job implements JobInterface {
 	
 		//Nom fichier d'entrée
 		private String inputFname;
+
+		//suffixe des dossiers contenant les resultat des maps
+		private String suffixeResultat = "resTemp";
 
 
 
@@ -52,12 +60,17 @@ public class Job implements JobInterface {
 			//objet permettant au callback de communiquer avec le job
 			Object temoin = new Object();
 
+			// recuperer les machines sur lesquelles sont stocké les fragment du fichier
+			HashMap<Integer, List<Integer>> daemonsConcernes = ServerHDFS.getFragmentData(this.inputFname) ;
+			int nbMachine = daemonsConcernes.size();
 
-			//Creer callbacks cb; 
-			CallBack cb = new CallBackImpl(ClusterConfig.nbMachine, temoin);
+			//Creer callback cb : le  
+			CallBack cb = new CallBackImpl(nbMachine, temoin);
 
 
-			// recupération des stubs sur les machines des clusters
+
+			// recupération des stubs sur les machines des clusters : 
+				//pour l'instant on ouvre toutes les communications, mais il faudrait dans un 2nd temps n'ouvrir que les communications nécessaires
 			Daemon stubs[] = new Daemon[ClusterConfig.nbMachine];
 			for (int i = 0; i < ClusterConfig.nbMachine; i++) {
 
@@ -74,23 +87,13 @@ public class Job implements JobInterface {
 
 
 			// lancement en parallèle des maps sur les différents daemons
-			for (int i = 0; i < ClusterConfig.nbMachine; i++) {
 
-				switch(inputFormat)	{
+			for (HashMap.Entry<Integer,List<Integer>> mapentry : daemonsConcernes.entrySet()) {
+				Integer i = mapentry.getKey() ;
+				List<Integer> numFragment = mapentry.getValue();
+			 
+				stubs[i].runMap(mr, inputFormat, inputFname, suffixeResultat, cb, numFragment);
 
-					case KV : 
-					
-					stubs[i].runMap(mr, new KVFormat(this.inputFname+i), new KVFormat(this.inputFname+"-resTemp"), cb);
-					break;
-
-					case LINE : 
-					System.out.println(this.inputFname+i);
-					stubs[i].runMap(mr, new LineFormat(this.inputFname+i), new KVFormat(this.inputFname+"-resTemp"), cb);
-					break;
-
-					default :
-					System.out.println(" probleme de format dans le startJob");
-				}
 			
 			}
 
@@ -100,8 +103,9 @@ public class Job implements JobInterface {
 
 
 			//lecture des résultats avec hdfs
-			Format readerReduce = new KVFormat(this.inputFname+"-resTemp"); 
-			hdfs.server.ServerHDFS.recupererResultats(this.inputFname+"-resTemp", readerReduce);
+			String emplacement = this.inputFname + suffixeResultat ;
+			Format readerReduce = new KVFormat(emplacement); 
+			hdfs.server.ServerHDFS.recupererResultats(emplacement, readerReduce);
 
 
 			//lancer le reduce 
