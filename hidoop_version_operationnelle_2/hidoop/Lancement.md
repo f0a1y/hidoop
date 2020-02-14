@@ -33,3 +33,8 @@ Pour lancer le serveur Hidoop :
 
 Le premier serveur sert à tester que les connexions entre serveurs et daemons fonctionnent.
 Le deuxième serveur va compter le nombre d'occurrence des mots d'un fichier.
+
+modifier sendAll de Cluster
+modifier envoi des fragment pour taille élevé
+opération de vérification des fragments des noeuds
+fichier absolu

@@ -49,7 +49,7 @@ public class ClientActivityBasic implements ActivityI {
     	FileInputStream reader = new FileInputStream(fileName);
 		FileBreaker breaker = this.selector.selectBreaker(fileName);
     	byte[] frame = null;
-		buffer = new byte[breaker.getFragmentLength() * 3];
+		buffer = new byte[breaker.getFragmentLength()];
     	ByteBuffer stock = ByteBuffer.allocate(breaker.getFragmentLength() * 3);
     	List<byte[]> fragments = new ArrayList<>();
 		int numberRead;

@@ -135,37 +135,34 @@ public class ServerHDFS extends Thread {
     		
     		FileData data = register.get(fileName);
     		List<Integer> fragments = new ArrayList<>();
-    		HashSet<Integer> order = new HashSet<>();
+    		HashSet<Integer> nodes = new HashSet<>();
     		for (int i = 0; i < data.getNumberFragments(); i++) {
     			fragments.add(i);
     		}
 
     		// Préparation de l'ordre de récupération des fragments du fichier
     		for (Integer node : data.getNodesID()) {
-				System.out.println("node " +node);
     			int numberFragmentsNode = cluster.receiveDataInt(node);
     			List<Integer> fragmentsNode = new ArrayList<>();
     			for (int i = 0; i < numberFragmentsNode; i++) {
     				Integer fragment = cluster.receiveDataInt(node);
-				System.out.print(" " +fragment);
     				if (fragments.remove(fragment)) {
-    					order.add(node);
+    					nodes.add(node);
     					fragmentsNode.add(fragment);
     				}
     			}
-				System.out.print(" res " );
     			cluster.sendData(node, fragmentsNode.size());
     			for (Integer fragment : fragmentsNode) {
-				System.out.print(" " + fragment);
     				cluster.sendData(node, fragment);
     			}
     		}
 
     		// Réception des fragments du fichier
-    		for (Integer node : order) {
+    		for (Integer node : nodes) {
 				while ((buffer = cluster.receiveData(node)) != null) {
 					String key = new String(buffer);
-    				writer.write(new KV(key, new String(cluster.receiveData(node))));
+					String value = new String(cluster.receiveData(node));
+    				writer.write(new KV(key, value));
     			}
     		}
         } catch (Exception e) {e.printStackTrace();}

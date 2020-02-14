@@ -49,54 +49,49 @@ public class DaemonActivityBasic implements ActivityI {
 	}
     
     private void hdfsWrite(String fileName) throws IOException {
-    	// Liste de numéros des fragments du file
-    	List<FragmentFile> fragments = register.get(fileName);
-		if (fragments == null) {
-			fragments = new ArrayList<>();
-	        register.put(fileName, fragments);
-	    } else {
-	    	fragments.clear();
-	    }
-	    
-	    // Dossier des fragments du file
-	    String nomDossier = ClusterConfig.PATH + "data/" + fileName + "/";
-	    File repertory = new File(nomDossier);
-		repertory.mkdir();
-		
-        // Réception du contenu du fichier
-        Integer ordre;
-    	while ((ordre = this.emitterStream.receiveDataInt()) >= 0) {
-            String file = ClusterConfig.fragmentToName(ordre);
-            fragments.add(new FragmentFile(ordre, file));
-            
-            // Réception du fragment
-            String fragment = new String(this.emitterStream.receiveData());
-            
-            // Récupération de l'éditeur adapté au file
-            Format editeur = selector.selectFormat(nomDossier + file);
-			editeur.open(OpenMode.W);
-            editeur.write(new KV(ordre.toString(), fragment));
-			editeur.close();
-    	}
-    	
-    	// Enregisterment de la liste contenant les numéros des fragments dans les noeuds
-    	try {
-            ObjectOutputStream objectOS = new ObjectOutputStream(new FileOutputStream("register_" + this.id + ".ser"));
-            objectOS.writeObject(register);
-            objectOS.close();
-        } catch(IOException e) {
-        	e.printStackTrace();
+        Integer order = this.emitterStream.receiveDataInt();
+        if (order >= 0) {
+        	
+        	// Liste de numéros des fragments du file
+        	List<FragmentFile> fragments = register.get(fileName);
+    		if (fragments == null) {
+    			fragments = new ArrayList<>();
+    	        register.put(fileName, fragments);
+    	    } else {
+    	    	fragments.clear();
+    	    }
+    		
+    	    // Dossier des fragments du file
+    	    String repertoryName = ClusterConfig.PATH + "data/" + fileName + "/";
+    	    System.out.println(repertoryName);
+    	    File repertory = new File(repertoryName);
+    	    System.out.println(repertory);
+    		System.out.println(repertory.mkdir());
+    		
+    		do {
+	            String file = ClusterConfig.fragmentToName(order);
+	            fragments.add(new FragmentFile(order, file));
+	            
+	            // Réception du fragment
+	            String fragment = new String(this.emitterStream.receiveData());
+	            
+	            // Récupération de l'éditeur adapté au file
+	            Format editeur = selector.selectFormat(repertoryName + file);
+				editeur.open(OpenMode.W);
+	            editeur.write(new KV(order.toString(), fragment));
+				editeur.close();
+    		} while ((order = this.emitterStream.receiveDataInt()) >= 0);
+
+        	saveRegister();
         }
     }
     
     private void hdfsRead(String fileName) throws IOException {
 	    // Dossier des fragments du file
 	    String repertoryName = ClusterConfig.PATH + "data/" + fileName + "/";
-				System.out.println(repertoryName);
 
     	this.hdfsFragmentData(fileName);
     	if (register.containsKey(fileName)) {
-				System.out.println("test 4");
     		
 			// Réception des numéros des fragments à envoyer
 			List<Integer> fragmentsNumbers = new ArrayList<>();
@@ -113,11 +108,9 @@ public class DaemonActivityBasic implements ActivityI {
 				String file = ClusterConfig.fragmentToName(number);
 				Format lecteur = this.selector.selectFormat(repertoryName + file);
 			    
-				System.out.println("lecteur " + lecteur + " " + repertoryName + file);
 				lecteur.open(OpenMode.R);
 				KV fragment;
 				while ((fragment = lecteur.read()) != null) {
-					System.out.println(fragment);
 					byte[] buffer = fragment.k.getBytes();
 					this.emitterStream.sendData(buffer, buffer.length);
 					buffer = fragment.v.getBytes();
@@ -140,35 +133,32 @@ public class DaemonActivityBasic implements ActivityI {
     
     private void hdfsFragmentData(String fileName) throws IOException {
     	// Envoi de la liste des numéros des fragments du fichier
-				System.out.print("test 1");
     	List<FragmentFile> fragmentFiles = this.getFragmentData(fileName);
-				System.out.print("test 2");
     	if (fragmentFiles != null && !fragmentFiles.isEmpty()) {
 			this.emitterStream.sendData(fragmentFiles.size());
 			for (FragmentFile file : fragmentFiles) {
 				this.emitterStream.sendData(file.getNumber());
 			}
     	}
-				System.out.print("test 3");
     }
     
     private List<FragmentFile> getFragmentData(String fileName) {
-    	// Dossier des fragments du file
+    	// Dossier des fragments du fichier
 	    String repertoryName = ClusterConfig.PATH + "data/" + fileName + "/";
     	File repertory = new File(repertoryName);
     	
-    	List<FragmentFile> fragmentFiles = null;
+    	List<FragmentFile> fragmentFiles = register.get(fileName);
+		boolean save = false;
 		if (repertory.exists()) {
 	    
 			// Vérification des fragments présents dans le dossier data
-			boolean save = false;
-			fragmentFiles = register.get(fileName);
 			if (fragmentFiles == null) {
 				fragmentFiles = new ArrayList<>();
 				register.put(fileName, fragmentFiles);
+				save = true;
 			}
+			List<FragmentFile> removal = new ArrayList<>();
 			List<String> fragmentFilesNames = new ArrayList<>();
-			List<FragmentFile> modification = new ArrayList<>();
 			List<String> filesNames = new ArrayList<>();
 			for (File file : repertory.listFiles()) {
 				filesNames.add(file.getName());
@@ -177,14 +167,14 @@ public class DaemonActivityBasic implements ActivityI {
 			// Suppression des fragments qui n'ont plus de fichier associé
 			for (FragmentFile file : fragmentFiles) {
 				if (!filesNames.contains(file.getFileName())) {
-					modification.add(file);
+					removal.add(file);
 					save = true;
 				} else {
 					fragmentFilesNames.add(file.getFileName());
 				}
 			}
-			fragmentFiles.removeAll(modification);
-			modification.clear();
+			fragmentFiles.removeAll(removal);
+			removal.clear();
 			
 			
 			// Addition des fichiers qui n'ont pas de fragment associé
@@ -195,25 +185,27 @@ public class DaemonActivityBasic implements ActivityI {
 					save = true;
 				}
 			}
-			
-			if (fragmentFiles.isEmpty()) {
-				register.remove(fileName);
-			}
-			if (save) {
-				
-				// Enregisterment de la liste contenant les numéros des fragments dans les noeuds
-				try {
-					ObjectOutputStream objectOS = new ObjectOutputStream(new FileOutputStream("register_" + this.id + ".ser"));
-					objectOS.writeObject(register);
-					objectOS.close();
-				} catch(IOException e) {
-					e.printStackTrace();
-				}
-			}
-		} else {
+		} 
+		if ((!repertory.exists() && register.containsKey(fileName)) 
+			|| (repertory.exists() && fragmentFiles.isEmpty())) {
+			save = true;
 			register.remove(fileName);
 		}
+		if (save) {
+			saveRegister();
+		}
     	return fragmentFiles;
+    }
+    
+    private void saveRegister() {
+		// Enregisterment de la liste contenant les numéros des fragments dans les noeuds
+		try {
+			ObjectOutputStream objectOS = new ObjectOutputStream(new FileOutputStream("register_" + this.id + ".ser"));
+			objectOS.writeObject(register);
+			objectOS.close();
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
     }
 
 }
