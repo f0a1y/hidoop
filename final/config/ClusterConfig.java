@@ -50,6 +50,6 @@ public class ClusterConfig {
     }
 
     // Chemin du projet
-    public final static String PATH = "/home/achatain/Documents/hidoopBis/final/";
+    public final static String PATH = "/tmp/hidoop/";
     
 }

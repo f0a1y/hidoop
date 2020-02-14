@@ -63,10 +63,8 @@ public class DaemonActivityBasic implements ActivityI {
     		
     	    // Dossier des fragments du file
     	    String repertoryName = ClusterConfig.PATH + "data/" + fileName + "/";
-    	    System.out.println(repertoryName);
     	    File repertory = new File(repertoryName);
-    	    System.out.println(repertory);
-    		System.out.println(repertory.mkdir());
+    	    repertory.mkdir();
     		
     		do {
 	            String file = ClusterConfig.fragmentToName(order);
