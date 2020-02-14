@@ -16,7 +16,7 @@ import formats.Format.OpenMode;
 import formats.Format.Type;
 import formats.KVFormat;
 import formats.LineFormat;
-
+import java.io.File;
 
 public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 	
@@ -59,14 +59,16 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 	public void mapInterne (Mapper m, Format.Type  inputFormat, String inputFname, String suffixeResultat, CallBack cb, List<Integer> numFragment) throws RemoteException {
 		try {	
 			ListIterator<Integer> it = numFragment.listIterator();
-
+			String nomDossier = ClusterConfig.PATH + "data/" + inputFname + suffixeResultat + "_" + this.id + "/";
+			File dossier = new File(nomDossier);
+			dossier.mkdir();
 			while (it.hasNext()) {
 
 				//numero du fragment à traiter
 				Integer i = it.next();
 
 				//création du fragment résultat
-				String emplacementWriter = ClusterConfig.PATH + "data/" + inputFname+ "_" + this.id + suffixeResultat + "/" +  ClusterConfig.fragmentToName(i);
+				String emplacementWriter = nomDossier +  ClusterConfig.fragmentToName(i);
 				Format writer = new KVFormat(emplacementWriter);
 
 				//appel du fragment à étudier

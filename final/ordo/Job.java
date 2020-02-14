@@ -105,8 +105,9 @@ public class Job implements JobInterface {
 			//lecture des résultats avec hdfs
 			String emplacement = this.inputFname + suffixeResultat ;
 			Format readerReduce = new KVFormat(emplacement); 
-			hdfs.server.ServerHDFS.recupererResultats(emplacement, readerReduce);
-
+			readerReduce.open(OpenMode.W);
+			hdfs.server.ServerHDFS.recupererResultats(this.inputFname, emplacement, readerReduce);
+			readerReduce.close();
 
 			//lancer le reduce 
 			Format writerReduce = new KVFormat(this.inputFname+"-res");

@@ -115,7 +115,7 @@ public class ServerHDFS extends Thread {
     	return result;
     }
     
-    public static void recupererResultats(String fileName, FormatWriter writer) {
+    public static void recupererResultats(String fileName, String resultFileName, FormatWriter writer) {
     	try {
     		openRegister();
 
@@ -130,39 +130,42 @@ public class ServerHDFS extends Thread {
         	cluster.sendAllData(2);
 
     		// Envoi du nom du fichier aux noeuds du cluster
-    		byte[] buffer = fileName.getBytes();
+    		byte[] buffer = resultFileName.getBytes();
     		cluster.sendAllData(buffer, buffer.length);
     		
     		FileData data = register.get(fileName);
     		List<Integer> fragments = new ArrayList<>();
-    		int[] orders = new int[data.getNumberFragments()];
+    		HashSet<Integer> order = new HashSet<>();
     		for (int i = 0; i < data.getNumberFragments(); i++) {
     			fragments.add(i);
-    			orders[i] = -1;
     		}
 
     		// Préparation de l'ordre de récupération des fragments du fichier
     		for (Integer node : data.getNodesID()) {
+				System.out.println("node " +node);
     			int numberFragmentsNode = cluster.receiveDataInt(node);
     			List<Integer> fragmentsNode = new ArrayList<>();
     			for (int i = 0; i < numberFragmentsNode; i++) {
     				Integer fragment = cluster.receiveDataInt(node);
+				System.out.print(" " +fragment);
     				if (fragments.remove(fragment)) {
-    					orders[fragment] = node;
+    					order.add(node);
     					fragmentsNode.add(fragment);
     				}
     			}
+				System.out.print(" res " );
     			cluster.sendData(node, fragmentsNode.size());
     			for (Integer fragment : fragmentsNode) {
+				System.out.print(" " + fragment);
     				cluster.sendData(node, fragment);
     			}
     		}
 
     		// Réception des fragments du fichier
-    		for (int i = 0; i < data.getNumberFragments(); i++) {
-    			if (orders[i] != -1) {
-    				writer.write(new KV(new String(cluster.receiveData(orders[i])), 
-							  			new String(cluster.receiveData(orders[i]))));
+    		for (Integer node : order) {
+				while ((buffer = cluster.receiveData(node)) != null) {
+					String key = new String(buffer);
+    				writer.write(new KV(key, new String(cluster.receiveData(node))));
     			}
     		}
         } catch (Exception e) {e.printStackTrace();}

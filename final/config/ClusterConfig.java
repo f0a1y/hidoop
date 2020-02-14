@@ -22,13 +22,13 @@ public class ClusterConfig {
     public final static int numPortHDFS[] = {4100, 4101, 4102, 4103, 4104, 4105};
 
     // Nombre de noeuds du cluster
-    public final static int nbMachine = 3;
+    public final static int nbMachine = 2;
 
 	// Sélecteur de format de fichier
     public final static FormatSelectorI selector = new FormatSelectorBasic();
     
     // Nombre de redondance du système de stockage HDFS
-    public final static int redundancy = 2;
+    public final static int redundancy = 1;
 
     // Choix du comportement du serveur HDFS
     public static ActivityI getServerActivity(CommunicationStream clientStream) {
@@ -50,6 +50,6 @@ public class ClusterConfig {
     }
 
     // Chemin du projet
-    public final static String PATH = "/home/achatain/Documents/hidoop/";
+    public final static String PATH = "/home/achatain/Documents/hidoopBis/final/";
     
 }

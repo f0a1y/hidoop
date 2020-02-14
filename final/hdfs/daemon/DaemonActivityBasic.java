@@ -92,9 +92,11 @@ public class DaemonActivityBasic implements ActivityI {
     private void hdfsRead(String fileName) throws IOException {
 	    // Dossier des fragments du file
 	    String repertoryName = ClusterConfig.PATH + "data/" + fileName + "/";
+				System.out.println(repertoryName);
 
     	this.hdfsFragmentData(fileName);
     	if (register.containsKey(fileName)) {
+				System.out.println("test 4");
     		
 			// Réception des numéros des fragments à envoyer
 			List<Integer> fragmentsNumbers = new ArrayList<>();
@@ -106,16 +108,21 @@ public class DaemonActivityBasic implements ActivityI {
 			}
 	    	
 			for (Integer number : fragmentsNumbers) {
-			    
+				
 				// Récupération du lecteur adapté au file
 				String file = ClusterConfig.fragmentToName(number);
 				Format lecteur = this.selector.selectFormat(repertoryName + file);
+			    
+				System.out.println("lecteur " + lecteur + " " + repertoryName + file);
 				lecteur.open(OpenMode.R);
-				KV fragment = lecteur.read();
-				byte[] buffer = fragment.k.getBytes();
-				this.emitterStream.sendData(buffer, buffer.length);
-				buffer = fragment.v.getBytes();
-				this.emitterStream.sendData(buffer, buffer.length);
+				KV fragment;
+				while ((fragment = lecteur.read()) != null) {
+					System.out.println(fragment);
+					byte[] buffer = fragment.k.getBytes();
+					this.emitterStream.sendData(buffer, buffer.length);
+					buffer = fragment.v.getBytes();
+					this.emitterStream.sendData(buffer, buffer.length);
+				}
 				lecteur.close();
 			}
     	}
@@ -133,66 +140,79 @@ public class DaemonActivityBasic implements ActivityI {
     
     private void hdfsFragmentData(String fileName) throws IOException {
     	// Envoi de la liste des numéros des fragments du fichier
+				System.out.print("test 1");
     	List<FragmentFile> fragmentFiles = this.getFragmentData(fileName);
-    	if (!fragmentFiles.isEmpty()) {
+				System.out.print("test 2");
+    	if (fragmentFiles != null && !fragmentFiles.isEmpty()) {
 			this.emitterStream.sendData(fragmentFiles.size());
 			for (FragmentFile file : fragmentFiles) {
 				this.emitterStream.sendData(file.getNumber());
 			}
     	}
+				System.out.print("test 3");
     }
     
     private List<FragmentFile> getFragmentData(String fileName) {
     	// Dossier des fragments du file
 	    String repertoryName = ClusterConfig.PATH + "data/" + fileName + "/";
-	    
-	    // Vérification des fragments présents dans le dossier data
-	    boolean save = false;
-    	List<FragmentFile> fragmentFiles = register.get(fileName);
-    	List<String> fragmentFilesNames = new ArrayList<>();
-    	List<FragmentFile> modification = new ArrayList<>();
     	File repertory = new File(repertoryName);
-		List<String> filesNames = new ArrayList<>();
-    	for (File file : repertory.listFiles()) {
-    		filesNames.add(file.getName());
+    	
+    	List<FragmentFile> fragmentFiles = null;
+		if (repertory.exists()) {
+	    
+			// Vérification des fragments présents dans le dossier data
+			boolean save = false;
+			fragmentFiles = register.get(fileName);
+			if (fragmentFiles == null) {
+				fragmentFiles = new ArrayList<>();
+				register.put(fileName, fragmentFiles);
+			}
+			List<String> fragmentFilesNames = new ArrayList<>();
+			List<FragmentFile> modification = new ArrayList<>();
+			List<String> filesNames = new ArrayList<>();
+			for (File file : repertory.listFiles()) {
+				filesNames.add(file.getName());
+			}
+			
+			// Suppression des fragments qui n'ont plus de fichier associé
+			for (FragmentFile file : fragmentFiles) {
+				if (!filesNames.contains(file.getFileName())) {
+					modification.add(file);
+					save = true;
+				} else {
+					fragmentFilesNames.add(file.getFileName());
+				}
+			}
+			fragmentFiles.removeAll(modification);
+			modification.clear();
+			
+			
+			// Addition des fichiers qui n'ont pas de fragment associé
+			for (String file : filesNames) {
+				if (!fragmentFilesNames.contains(file)) {
+					int number = ClusterConfig.nameToFragment(file);
+					fragmentFiles.add(new FragmentFile(number, file));
+					save = true;
+				}
+			}
+			
+			if (fragmentFiles.isEmpty()) {
+				register.remove(fileName);
+			}
+			if (save) {
+				
+				// Enregisterment de la liste contenant les numéros des fragments dans les noeuds
+				try {
+					ObjectOutputStream objectOS = new ObjectOutputStream(new FileOutputStream("register_" + this.id + ".ser"));
+					objectOS.writeObject(register);
+					objectOS.close();
+				} catch(IOException e) {
+					e.printStackTrace();
+				}
+			}
+		} else {
+			register.remove(fileName);
 		}
-    	
-    	// Suppression des fragments qui n'ont plus de fichier associé
-    	for (FragmentFile file : fragmentFiles) {
-    		if (!filesNames.contains(file.getFileName())) {
-    			modification.add(file);
-    			save = true;
-    		} else {
-        		fragmentFilesNames.add(file.getFileName());
-    		}
-    	}
-    	fragmentFiles.removeAll(modification);
-    	modification.clear();
-    	
-    	
-    	// Addition des fichiers qui n'ont pas de fragment associé
-    	for (String file : filesNames) {
-    		if (!fragmentFilesNames.contains(file)) {
-    			int number = ClusterConfig.nameToFragment(file);
-    			fragmentFiles.add(new FragmentFile(number, file));
-    			save = true;
-    		}
-    	}
-    	
-    	if (fragmentFiles.isEmpty()) {
-    		register.remove(fileName);
-    	}
-    	if (save) {
-        	
-        	// Enregisterment de la liste contenant les numéros des fragments dans les noeuds
-        	try {
-                ObjectOutputStream objectOS = new ObjectOutputStream(new FileOutputStream("register_" + this.id + ".ser"));
-                objectOS.writeObject(register);
-                objectOS.close();
-            } catch(IOException e) {
-            	e.printStackTrace();
-            }
-    	}
     	return fragmentFiles;
     }
 
