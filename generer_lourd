@@ -1,0 +1,5 @@
+#!/bin/bash
+
+dd if=/dev/urandom of=gros.bin bs=1k count=200000
+od -x gros.bin > gros_txt.txt
+rm gros.bin
