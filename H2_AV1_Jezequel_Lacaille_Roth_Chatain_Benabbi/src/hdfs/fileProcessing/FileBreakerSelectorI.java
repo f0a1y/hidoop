@@ -4,6 +4,6 @@ public interface FileBreakerSelectorI {
 	
 	boolean knowsFileFormat(String fileName);
 	
-	FileBreaker selectBreaker(String fileName);
+	FileBreakerA selectBreaker(String fileName);
 	
 }

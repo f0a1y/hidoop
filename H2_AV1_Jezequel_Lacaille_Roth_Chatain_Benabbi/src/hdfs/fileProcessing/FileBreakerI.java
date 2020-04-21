@@ -4,6 +4,6 @@ import java.util.List;
 
 public interface FileBreakerI {
 
-	int fragment(byte[] data, int length, List<byte[]> fragments);
+	boolean fragment(byte[] data, int limit, int firstFragmentLength, List<byte[]> fragments);
 	
 }

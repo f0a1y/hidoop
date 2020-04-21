@@ -14,7 +14,7 @@ public class FileBreakerSelectorBasic implements FileBreakerSelectorI {
 	}
 	
 	@Override
-	public FileBreaker selectBreaker(String fileName) {
+	public FileBreakerA selectBreaker(String fileName) {
 		if (fileName.endsWith(".txt"))
 			return new FileBreakerTXT(this.fragmentLength);
 		return null;

@@ -1,10 +1,10 @@
 package hdfs.fileProcessing;
 
-public abstract class FileBreaker implements FileBreakerI {
+public abstract class FileBreakerA implements FileBreakerI {
 	
 	private int fragmentLength;
 	
-	public FileBreaker(int fragmentLength) {
+	public FileBreakerA(int fragmentLength) {
 		this.fragmentLength = fragmentLength;
 	}
 	

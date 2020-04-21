@@ -1,11 +1,22 @@
 package config;
 
+import java.io.File;
+import java.net.Socket;
+
 import formats.FormatSelectorBasic;
 import formats.FormatSelectorI;
 import hdfs.ActivityI;
-import hdfs.CommunicationStream;
-import hdfs.daemon.DaemonActivityBasic;
-import hdfs.server.ServerActivityBasic;
+import hdfs.FileDescriptionI;
+import hdfs.daemon.DaemonActivity;
+import hdfs.daemon.FragmentData;
+import hdfs.daemon.FragmentDataI;
+import hdfs.daemon.FragmentRegister;
+import hdfs.daemon.FragmentRegisterI;
+import hdfs.server.FileData;
+import hdfs.server.FileDataI;
+import hdfs.server.FileRegister;
+import hdfs.server.FileRegisterI;
+import hdfs.server.ServerActivity;
 
 public class ClusterConfig {
 
@@ -22,7 +33,7 @@ public class ClusterConfig {
     public final static int numPortHDFS[] = {4100, 4101, 4102, 4103, 4104, 4105};
 
     // Nombre de noeuds du cluster
-    public final static int nbMachine = 2;
+    public final static int nbMachine = 1;
 
 	// Sélecteur de format de fichier
     public final static FormatSelectorI selector = new FormatSelectorBasic();
@@ -31,14 +42,47 @@ public class ClusterConfig {
     public final static int redundancy = 1;
 
     // Choix du comportement du serveur HDFS
-    public static ActivityI getServerActivity(CommunicationStream clientStream) {
-    	return new ServerActivityBasic(clientStream);
+    public static ActivityI getServerActivity(Socket client) {
+    	return new ServerActivity(client);
     }
 
     // Choix du comportement des daemons HDFS 
-    public static ActivityI getDaemonActivity(CommunicationStream emitterStream, 
-    										  int id) {
-    	return new DaemonActivityBasic(emitterStream, selector, id);
+    public static ActivityI getDaemonActivity(Socket emitter, int id) {
+    	return new DaemonActivity(emitter, selector, id);
+    }
+
+    // Choix du registre pour le serveur
+    public static FileRegisterI getFileRegister() {
+    	return new FileRegister();
+    }
+    
+    public static FileDataI getFileData(FileDescriptionI file) {
+    	return new FileData(file);
+    }
+
+    // Choix du registre pour les daemons
+    public static FragmentRegisterI getFragmentRegister() {
+    	return new FragmentRegister();
+    }
+    
+    public static FragmentDataI getFragmentData(FileDescriptionI file, String path) {
+    	return new FragmentData(file, path);
+    }
+    
+    public static String getDataPath() {
+    	return PATH + "data" + File.separator;
+    }
+    
+    public static String fileToRepertory(FileDescriptionI file) {
+    	StringBuilder fileName = new StringBuilder();
+    	fileName.append(file.getPath().replace(':', '-').replace('\\', '-').replace('/', '-'));
+    	fileName.append('_');
+    	fileName.append(file.getName().replace(':', '-').replace('\\', '-').replace('/', '-'));
+    	if (file.hasAlias()) {
+        	fileName.append('_');
+        	fileName.append(file.getAlias());
+    	}
+    	return fileName.toString();
     }
     
     public static String fragmentToName(Integer fragment) {
@@ -50,6 +94,6 @@ public class ClusterConfig {
     }
 
     // Chemin du projet
-    public final static String PATH = "/tmp/hidoop/";
+    public final static String PATH = "C:\\Users\\Alexandre\\git\\hidoop\\H2_AV1_Jezequel_Lacaille_Roth_Chatain_Benabbi\\src\\";
     
 }

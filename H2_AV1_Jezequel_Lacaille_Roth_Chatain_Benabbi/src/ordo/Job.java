@@ -3,16 +3,21 @@ package ordo;
 // pour compiler : se placer dans build puis javac ~/2A/hidoop/git/hidoop/hidoop/src/*/*.java
 
 import config.ClusterConfig;
+import config.GeneralConfig;
 import formats.Format;
 import formats.KVFormat;
 import formats.LineFormat;
 import formats.Format.OpenMode;
 import formats.Format.Type;
 import hdfs.ClientHDFS;
+import hdfs.FileDescriptionI;
+import hdfs.daemon.FragmentDataI;
+import hdfs.server.ServerBridge;
 import hdfs.server.ServerHDFS;
 import map.MapReduce;
 
 import java.rmi.registry.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -61,7 +66,8 @@ public class Job implements JobInterface {
 			Object temoin = new Object();
 
 			// recuperer les machines sur lesquelles sont stocké les fragment du fichier
-			HashMap<Integer, List<Integer>> daemonsConcernes = ServerHDFS.getFragmentData(this.inputFname) ;
+			FileDescriptionI file = GeneralConfig.getFileDescription(this.inputFname, null, null, null);
+			HashMap<Integer, FragmentDataI> daemonsConcernes = ServerBridge.getFileData(file) ;
 			int nbMachine = daemonsConcernes.size();
 
 			//Creer callback cb : le  
@@ -88,9 +94,10 @@ public class Job implements JobInterface {
 
 			// lancement en parallèle des maps sur les différents daemons
 
-			for (HashMap.Entry<Integer,List<Integer>> mapentry : daemonsConcernes.entrySet()) {
+			for (HashMap.Entry<Integer, FragmentDataI> mapentry : daemonsConcernes.entrySet()) {
 				Integer i = mapentry.getKey() ;
-				List<Integer> numFragment = mapentry.getValue();
+				List<Integer> numFragment =  new ArrayList<>();
+				numFragment.addAll(mapentry.getValue().getFragments());
 			 
 				stubs[i].runMap(mr, inputFormat, inputFname, suffixeResultat, cb, numFragment);
 
@@ -106,7 +113,7 @@ public class Job implements JobInterface {
 			String emplacement = this.inputFname + suffixeResultat ;
 			Format readerReduce = new KVFormat(emplacement); 
 			readerReduce.open(OpenMode.W);
-			hdfs.server.ServerHDFS.recupererResultats(this.inputFname, emplacement, readerReduce);
+			ServerBridge.recupererResultats(file, readerReduce);
 			readerReduce.close();
 
 			//lancer le reduce 
