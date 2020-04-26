@@ -37,7 +37,7 @@ public abstract class ClientActivityA implements ActivityI {
 					Iterator<FileDescriptionI> fileIterator = fileGroupIterator.next().iterator();
 					while (fileIterator.hasNext()) {
 						FileDescriptionI file = fileIterator.next();
-						
+						System.out.println(file);
 						// Envoie de la commande
 						this.serverStream.sendData(command);
 						

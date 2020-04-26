@@ -31,10 +31,10 @@ public class FragmentRegister implements FragmentRegisterI {
     	return this.register.keySet().iterator();
     }
     
-    public FragmentDataI addData(FileDescriptionI file) {
+    public FragmentDataI addData(FileDescriptionI file, int id) {
     	FragmentDataI data;
     	if (!this.register.containsKey(file)) {
-    		data = ClusterConfig.getFragmentData(file, ClusterConfig.fileToRepertory(file));
+    		data = ClusterConfig.getFragmentData(file, ClusterConfig.fileToRepertory(file, id));
     		this.register.put(file, data);
     	} else {
     		data = this.register.get(file);

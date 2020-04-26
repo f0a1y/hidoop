@@ -1,158 +1,146 @@
 package ordo;
 
-import java.rmi.*;
-import java.rmi.registry.*;
-//import java.rmi.server.useLocalHostname;
-import java.rmi.server.UnicastRemoteObject ;
-
 import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject ;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 
-import map.*;
-import config.*  ;
+import config.ClusterConfig;
 import formats.Format;
 import formats.Format.OpenMode;
 import formats.Format.Type;
 import formats.KVFormat;
-import formats.LineFormat;
+import hdfs.daemon.FragmentDataI;
+import map.Mapper;
+
 import java.io.File;
 
 public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 	
+	private static final long serialVersionUID = 1L;
 	private int id;
-
-
-	//constructeur
-	public DaemonImpl( int i) throws RemoteException {
-		this.id = i;
 	
+	//constructeur
+	public DaemonImpl(int id) throws RemoteException {
+		this.id = id;
 	}
 	
-
-	
-
 	//methode distante
 	@Override
-	public void runMap(final Mapper m, final Format.Type  inputFormat, final String inputFname, final String suffixeResultat, final CallBack cb, final List<Integer> numFragment) throws RemoteException {
-
-		// crÃ©e un thread secondaire qui execute de map pendant qu'on redonne la main au programme principal
-		Thread t = new Thread() {
-
-			public void run() {
-				try {
-					mapInterne(m, inputFormat, inputFname, suffixeResultat, cb, numFragment);
-				} catch (RemoteException e) {
-					System.out.println(" deamon_problÃ¨me sur le Runmap");
-					e.printStackTrace();
-					
+	public void runMap(final Mapper mapper,
+					   final Type inputFormat,
+					   final String resultRepertory, 
+					   final CallBack callback,  
+					   final FragmentDataI data) throws RemoteException {
+		// créer un thread secondaire qui execute de map pendant qu'on redonne la main au programme principal
+		@SuppressWarnings("unchecked")
+		List<Integer>[] fragments = new List[ClusterConfig.numberMaps];
+		int numberMaps = Math.min(data.getNumberFragments(), ClusterConfig.numberMaps);
+		Iterator<Integer> iterator = data.iterator();
+		for (int i = 0; i < ClusterConfig.numberMaps; i++)
+			fragments[i] = new ArrayList<>();
+		for (int i = 0; i < data.getNumberFragments(); i++)
+			fragments[i % ClusterConfig.numberMaps].add(iterator.next());
+		for (int i = 0; i < numberMaps; i++) {
+			final List<Integer> listFragments = fragments[i];
+			Thread thread = new Thread() {
+				public void run() {
+					try {
+						mapInterne(mapper, inputFormat, resultRepertory, callback, listFragments, data);
+					} catch (RemoteException e) {e.printStackTrace();}
 				}
-		}
-		};
+			};
 
-		//lancement du thread secondaire
-		t.start(); 
+			//lancement du thread secondaire
+			thread.start(); 
+		}
+		for (int i = numberMaps; i < ClusterConfig.numberMaps; i++) 
+			callback.MapFinished();
 		
 	}
 
-
-	public void mapInterne (Mapper m, Format.Type  inputFormat, String inputFname, String suffixeResultat, CallBack cb, List<Integer> numFragment) throws RemoteException {
+	public void mapInterne (Mapper mapper, 
+							Type inputFormat, 
+							String resultRepertory, 
+							CallBack callback,
+							List<Integer> fragments,
+							FragmentDataI data) throws RemoteException {
 		try {	
-			ListIterator<Integer> it = numFragment.listIterator();
-			String nomDossier = ClusterConfig.PATH + "data/" + inputFname + suffixeResultat + "_" + this.id + "/";
-			File dossier = new File(nomDossier);
-			dossier.mkdir();
-			while (it.hasNext()) {
+			Iterator<Integer> iterator = fragments.iterator();
+			String repertoryName = ClusterConfig.getDataPath() + data.getFragmentsPath() + resultRepertory;
+			File repertory = new File(repertoryName);
+			repertory.mkdir();
+			while (iterator.hasNext()) {
 
-				//numero du fragment Ã  traiter
-				Integer i = it.next();
+				//numero du fragment à traiter
+				Integer fragment = iterator.next();
 
-				//crÃ©ation du fragment rÃ©sultat
-				String emplacementWriter = nomDossier +  ClusterConfig.fragmentToName(i);
-				Format writer = new KVFormat(emplacementWriter);
+				//création du fragment résultat
+				String fileWrite = repertoryName + ClusterConfig.fragmentToName(fragment);
+				Format writer = new KVFormat(fileWrite);
 
-				//appel du fragment Ã  Ã©tudier
-				String emplacementReader = ClusterConfig.PATH + "data/" + inputFname + "_" + this.id +"/" + ClusterConfig.fragmentToName(i);
-				Format reader;
-				switch(inputFormat)	{
-
-					case KV : 
-					reader = new KVFormat(emplacementReader);
-					break;
-	
-					case LINE : 
-					reader = new LineFormat(emplacementReader);
-					break;
-	
-					default :
-					reader = new KVFormat(emplacementReader); // pour que Ã§a compile
-					System.out.println(" probleme de format dans le mapInterne");
-				}
-
+				//appel du fragment à étudier
+				String fileRead = ClusterConfig.getDataPath() + data.getFragmentsPath() + data.getFragmentName(fragment);
+				Format reader = ClusterConfig.selector.selectFormat(inputFormat, fileRead);
 
 				//Ouverture du reader et du writer
 				reader.open(OpenMode.R);
 				writer.open(OpenMode.W);
 
-
 				//Appel de la fonction map
-				m.map(reader, writer);
+				mapper.map(reader, writer);
 				
-
 				//Fermeture du reader et du writer
 				reader.close();
 				writer.close();
 			}
 
-			//appel du callback Ã  la fin de l'exÃ©cution
-			cb.MapFinished();
-
+			//appel du callback à la fin de l'exécution
+			callback.MapFinished();
 
 		} catch (Exception e) {
-			System.out.println(" deamon_erreur sur le mapInterne");
+			System.out.println("Erreur dans le map interne");
 			e.printStackTrace();
 		}
-
 	}
 	
 	public static void main(String args[]) {  
-		//argument = indice correspondant Ã  l'ID
+		// récupération de l'id
+		int id = Integer.parseInt(args[0]);
 
-			 String machine = new String("vide"); //permet d'initialiser machine dans tout les cas
-			 									  // sinon Ã§a ne compile pas
+		// récupération du numéro de port correspondant
+		int port = config.ClusterConfig.hidoopPorts[id];
 
-			// rÃ©cupÃ©ration de l'id
-			 int id = Integer.parseInt(args[0]);
-
-
-			 //rÃ©cupÃ©ration du numÃ©ro de port correspondant
-			 int port =config.ClusterConfig.numPortHidoop[id];
-
-
-			 //rÃ©cupÃ©ration du nom complet de la machine surlequel est lancÃ© le daemon
-			 try {
-			 	 machine = InetAddress.getLocalHost().getHostName();
-			 }catch (Exception e) { 
-				 e.printStackTrace(); 
-				 System.exit(0);
-			}
-
-
-		//creation du serveur de nom
+		// récupération du nom complet de la machine surlequel est lancé le daemon
+		String host = null;
 		try {
-			Registry registry = LocateRegistry.createRegistry(port);
-		} catch (Exception e) {
-			System.out.println(" registre deja cree");
+			host = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) { 
+			e.printStackTrace(); 
+			System.exit(0);
 		}
 
+		// creation du serveur de nom
+		System.out.println("Création du registre");
+		try {
+			@SuppressWarnings("unused")
+			Registry registry = LocateRegistry.createRegistry(port);
+		} catch (RemoteException e) {
+			System.out.println("Registre deja crée");
+		}
 
-		//enregistrement auprÃ¨s du serveur de nom
+		//enregistrement auprès du serveur de nom
 		try{
-			Naming.rebind("//"+machine+":"+port+"/Daemon", new DaemonImpl(id));
-			System.out.println("le Daemon numero "+id+" est lancÃ© sur la machine "+machine+ ", au port "+port);
-		
+			Naming.rebind("//" + host + ":" + port + "/Daemon", new DaemonImpl(id));
+			System.out.println("Le daemon " + id + " est lancé sur la machine " + host + ":" + port);
 		} catch (Exception e) {
-			System.out.println(" probleme sur l'enregistrement auprÃ¨s du serveur de nom");
+			System.out.println("Probleme pendant l'enregistrement du daemon " + id + " auprès du serveur de nom");
 			e.printStackTrace();
 			System.exit(0);
 		}

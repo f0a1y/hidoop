@@ -28,7 +28,8 @@ public class DaemonHDFS extends Thread {
         try {
         	if (args.length == 1) {
 	            int id = Integer.parseInt(args[0]);
-	            ServerSocket client = new ServerSocket(ClusterConfig.numPortHDFS[id]);
+	            @SuppressWarnings("resource")
+				ServerSocket client = new ServerSocket(ClusterConfig.hdfsPorts[id]);
 	            while (true) {
 	                DaemonHDFS daemon = new DaemonHDFS(client.accept(), id);
 	                daemon.start();

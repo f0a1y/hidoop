@@ -84,9 +84,9 @@ public class ClientHDFS {
 			try {
 				Command command = Command.intToCommand(Integer.parseInt(commandLabel));
 				if (command != null)
-					error = true;
-				else 
 					commandGroupList.add(command);
+				else 
+					error = true;
 					
 			} catch (Exception e) {error = true;}
 		}
@@ -109,9 +109,9 @@ public class ClientHDFS {
 				File file = new File(fileName);
 				if (file.exists()) {
 					fileName = file.getName();
-					filePath = file.getAbsolutePath();
+					filePath = file.getAbsolutePath().substring(0, file.getAbsolutePath().lastIndexOf(file.getName()));
 				} else 
-					filePath = Paths.get(".").toAbsolutePath().normalize().toString();
+					filePath = Paths.get(".").toAbsolutePath().normalize().toString() + File.separator;
 				for (int j = 1; j < splits.length; j++) {
 					switch (splits[j].charAt(0)) {
 					case '\1':

@@ -1,49 +1,52 @@
 package ordo;
 
 import java.util.concurrent.Semaphore;
-import java.rmi.*;
+import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
 public class CallBackImpl extends UnicastRemoteObject implements CallBack {
 	
-	private int nbServeurs;
-	private Object temoin;
-	private Semaphore s;
+	private static final long serialVersionUID = 1L;
+	private int numberMaps;
+	private Object observer;
+	private Semaphore gate;
 	
-	public CallBackImpl(int n, Object t) throws RemoteException {
-		this.nbServeurs = n;
-		this.temoin = t;
-		this.s = new Semaphore(1);
-		
+	public CallBackImpl(int numberMaps, Object observer) throws RemoteException {
+		this.observer = observer;
+		this.gate = new Semaphore(1);
+		this.numberMaps = numberMaps;
+	}
+	
+	public void addNumberDaemons(int daemons) {
+		try {
+			this.gate.acquire();
+		} catch (InterruptedException e) {e.printStackTrace();}
+		this.numberMaps += daemons;
+		try {
+			this.gate.release();				
+		} catch (Exception e) {e.printStackTrace();}
 	}
 
 	@Override
 	public void MapFinished() throws RemoteException {
-
 		try{
-			//permet un acc√®s exclusif √† la d√©cr√©mentation
-			s.acquire();
-		} catch (Exception e) {
-		e.printStackTrace();				
+			//permet un accËs exclusif ‡ la dÈcrÈmentation
+			this.gate.acquire();
+		} catch (InterruptedException e) {e.printStackTrace();}
+
+		// dÈcrÈmentation du nombre de map en cours
+		this.numberMaps--;
+
+		// Quand tout les map sont terminÈ, le CallBack rÈveille le Job
+		if (this.numberMaps == 0) {
+			synchronized (this.observer) {
+				this.observer.notify(); 
+			}
 		}
 
-
-		// d√©cr√©mentation du nombre de map en cours
-		nbServeurs--;
-
-		// Quand tout les map sont termin√©, le CallBack r√©veille le Job
-		if (nbServeurs == 0) {
-			synchronized (temoin) {temoin.notify(); }	//Reveiller le thread principal 
-		}
-
-
-		try{
-			//permet un acc√®s exclusif √† la d√©cr√©mentation
-			s.release();				
-		} catch (Exception e) {
-			e.printStackTrace();				
-		}
-		
+		try {
+			this.gate.release();				
+		} catch (Exception e) {e.printStackTrace();}
 	}
 
 }

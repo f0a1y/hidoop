@@ -1,5 +1,6 @@
 package hdfs;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -36,7 +37,7 @@ public class ClientActivity extends ClientActivityA {
 	}
     
     private void hdfsWrite(FileDescriptionI file) throws IOException {
-    	FileInputStream reader = new FileInputStream(file.getName());
+    	FileInputStream reader = new FileInputStream(file.getPath() + file.getName());
     	this.serverStream.sendData(reader.getChannel().size());
 
     	// Réception des informations du cluster
@@ -141,8 +142,8 @@ public class ClientActivity extends ClientActivityA {
 				cluster.sendData(daemon, numberFragments);
     			for (int j = 0; j < numberFragments; j++) {
     				int fragment = this.serverStream.receiveDataInt();
-    				if (fragment > fragmentMax) 
-    					fragmentMax = fragment;
+    				if (fragment + 1 > fragmentMax) 
+    					fragmentMax = fragment + 1;
     				cluster.sendData(daemon, fragment);
     			}
     			daemons.add(daemon);
@@ -174,6 +175,8 @@ public class ClientActivity extends ClientActivityA {
 
     		// Réception des fragments du fichier
     		FileOutputStream writer = new FileOutputStream(ClientConfig.fileToFileName(file));
+    		File f = new File(ClientConfig.fileToFileName(file));
+    		System.out.println("test " +f.getAbsolutePath());
     		for (int i = 0; i < fragmentMax; i++) {
     			if (order[i] != -1) {
     				cluster.sendData(order[i], i);

@@ -1,129 +1,88 @@
 package ordo;
 
-// pour compiler : se placer dans build puis javac ~/2A/hidoop/git/hidoop/hidoop/src/*/*.java
+import java.io.File;
+import java.rmi.Naming;
+import java.util.HashMap;
 
 import config.ClusterConfig;
-import config.GeneralConfig;
 import formats.Format;
-import formats.KVFormat;
-import formats.LineFormat;
 import formats.Format.OpenMode;
 import formats.Format.Type;
-import hdfs.ClientHDFS;
+import formats.KVFormat;
 import hdfs.FileDescriptionI;
 import hdfs.daemon.FragmentDataI;
 import hdfs.server.ServerBridge;
-import hdfs.server.ServerHDFS;
 import map.MapReduce;
-
-import java.rmi.registry.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.Iterator;
-import java.net.InetAddress;
-import java.rmi.*;
 
 public class Job implements JobInterface {
 
-		//Format d'entrée
-		private Format.Type inputFormat;
+	//Format d'entr�e
+	private Type inputFormat;
 	
-		//Nom fichier d'entrée
-		private String inputFname;
+	//Nom fichier d'entr�e
+	private FileDescriptionI inputFile;
 
-		//suffixe des dossiers contenant les resultat des maps
-		private String suffixeResultat = "resTemp";
-
-
+	//suffixe des dossiers contenant les resultat des maps
+	private String resultRepertory = "resTemp" + File.separator;
 
 	//Constructeur
 	public Job() {
-		//valleurs pour l'exemple du sujet
 		this.inputFormat = Format.Type.LINE;  
-		this.inputFname = "";;
 	}	
 
-
 	@Override
-	public void setInputFormat(Type ft) {
-		this.inputFormat = ft;
-		
+	public void setInputFormat(Type inputFormat) {
+		this.inputFormat = inputFormat;		
 	}
 
 	@Override
-	public void setInputFname(String fname) {
-		this.inputFname = fname;
-		
+	public void setInputFile(FileDescriptionI inputFile) {
+		this.inputFile = inputFile;
 	}
 
 	@Override
-	public void startJob(MapReduce mr) {
+	public void startJob(MapReduce treatment) {
 		try {
 
 			//objet permettant au callback de communiquer avec le job
-			Object temoin = new Object();
+			Object observer = new Object();
 
 			// recuperer les machines sur lesquelles sont stocké les fragment du fichier
-			FileDescriptionI file = GeneralConfig.getFileDescription(this.inputFname, null, null, null);
-			HashMap<Integer, FragmentDataI> daemonsConcernes = ServerBridge.getFileData(file) ;
-			int nbMachine = daemonsConcernes.size();
+			HashMap<Integer, FragmentDataI> daemonFragments = ServerBridge.getFragmentData(this.inputFile) ;
 
 			//Creer callback cb : le  
-			CallBack cb = new CallBackImpl(nbMachine, temoin);
 
-
-
-			// recupération des stubs sur les machines des clusters : 
-				//pour l'instant on ouvre toutes les communications, mais il faudrait dans un 2nd temps n'ouvrir que les communications nécessaires
-			Daemon stubs[] = new Daemon[ClusterConfig.nbMachine];
-			for (int i = 0; i < ClusterConfig.nbMachine; i++) {
-
-				int port = config.ClusterConfig.numPortHidoop[i];
-				String machine = new String(config.ClusterConfig.nomMachine[i]);
-
-
-				System.out.println(config.ClusterConfig.nomMachine[i]);
-
-				stubs[i] = (Daemon) Naming.lookup("//"+ClusterConfig.nomMachine[i]+":"+ClusterConfig.numPortHidoop[i]+"/Daemon");
-				
+			// recup�ration des stubs sur les machines des clusters : 
+			//pour l'instant on ouvre toutes les communications, mais il faudrait dans un 2nd temps n'ouvrir que les communications nécessaires
+			Daemon daemons[] = new Daemon[ClusterConfig.numberDaemons];
+			CallBack callback = new CallBackImpl(daemonFragments.size() * ClusterConfig.numberMaps, observer);
+			for (int i = 0; i < ClusterConfig.numberDaemons; i++) {
+				if (daemonFragments.containsKey(i)) {
+					FragmentDataI data = daemonFragments.get(i);
+					int port = ClusterConfig.hidoopPorts[i];
+					String host = new String(ClusterConfig.hosts[i]);
+					daemons[i] = (Daemon) Naming.lookup("//" + host + ":" + port +"/Daemon");
+					daemons[i].runMap(treatment, this.inputFormat, this.resultRepertory, callback, data);
+				}
 			}
-				
-
-
-			// lancement en parallèle des maps sur les différents daemons
-
-			for (HashMap.Entry<Integer, FragmentDataI> mapentry : daemonsConcernes.entrySet()) {
-				Integer i = mapentry.getKey() ;
-				List<Integer> numFragment =  new ArrayList<>();
-				numFragment.addAll(mapentry.getValue().getFragments());
-			 
-				stubs[i].runMap(mr, inputFormat, inputFname, suffixeResultat, cb, numFragment);
-
-			
-			}
-
 
 			//mettre en veille jusqu'au réveil du callback
-			synchronized (temoin) {temoin.wait();}
-
+			synchronized (observer) {
+				observer.wait();
+			}
 
 			//lecture des résultats avec hdfs
-			String emplacement = this.inputFname + suffixeResultat ;
-			Format readerReduce = new KVFormat(emplacement); 
-			readerReduce.open(OpenMode.W);
-			ServerBridge.recupererResultats(file, readerReduce);
-			readerReduce.close();
+			String file = ClusterConfig.fileToFileName(this.inputFile) + "-" + this.resultRepertory;
+			Format reader = new KVFormat(file); 
+			reader.open(OpenMode.W);
+			ServerBridge.writeFragments(this.inputFile, daemonFragments.keySet(), this.resultRepertory, reader);
+			reader.close();
 
 			//lancer le reduce 
-			Format writerReduce = new KVFormat(this.inputFname+"-res");
-
-			readerReduce.open(OpenMode.R);
-			writerReduce.open(OpenMode.W);
-
-			mr.reduce(readerReduce, writerReduce);
-			
+			Format writer = new KVFormat(ClusterConfig.fileToFileName(this.inputFile) + "-res");
+			reader.open(OpenMode.R);
+			writer.open(OpenMode.W);
+			treatment.reduce(reader, writer);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(0);

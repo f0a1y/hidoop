@@ -1,10 +1,10 @@
 package hdfs.fileProcessing;
 
-public class FileBreakerSelectorBasic implements FileBreakerSelectorI {
+public class FileBreakerSelector implements FileBreakerSelectorI {
 
 	private int fragmentLength;
 	
-	public FileBreakerSelectorBasic(int fragmentLength) {
+	public FileBreakerSelector(int fragmentLength) {
 		this.fragmentLength = fragmentLength;
 	}
 	

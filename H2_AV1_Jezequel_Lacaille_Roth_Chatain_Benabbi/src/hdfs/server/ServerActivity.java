@@ -56,9 +56,9 @@ public class ServerActivity extends ServerActivityA {
         List<Integer> daemons = new ArrayList<>();
         List<Integer> order = new ArrayList<>();
         List<List<Integer>> daemonsFragments = new ArrayList<>(numberFragments);
-    	int[] daemonIds = new int[ClusterConfig.nbMachine];
-    	List<Integer> ids = new ArrayList<>(ClusterConfig.nbMachine);
-		for (int i = 0; i < ClusterConfig.nbMachine; i++)
+    	int[] daemonIds = new int[ClusterConfig.numberDaemons];
+    	List<Integer> ids = new ArrayList<>(ClusterConfig.numberDaemons);
+		for (int i = 0; i < ClusterConfig.numberDaemons; i++)
 			ids.add(i);
 		int numberDaemons = 0;
 
@@ -85,8 +85,8 @@ public class ServerActivity extends ServerActivityA {
         Iterator<Integer> iterator = daemons.iterator();
         for (int i = 0; i < numberDaemons; i++) {
         	int daemon = iterator.next();
-        	hostNames[i] = ClusterConfig.nomMachine[daemon];
-        	ports[i] = ClusterConfig.numPortHDFS[daemon];
+        	hostNames[i] = ClusterConfig.hosts[daemon];
+        	ports[i] = ClusterConfig.hdfsPorts[daemon];
         }
         
     	// Envoi des informations des nodes au client
@@ -121,12 +121,12 @@ public class ServerActivity extends ServerActivityA {
 		    	Iterator<Integer> iterator = data.iterator();
 		        String[] hostNames = new String[numberDaemons];
 		        int[] ports = new int[numberDaemons];
-		        int[] daemons = new int[ClusterConfig.nbMachine];
+		        int[] daemons = new int[ClusterConfig.numberDaemons];
 		        for (int i = 0; i < numberDaemons; i++) {
 		        	int daemon = iterator.next();
 		        	daemons[daemon] = i;
-		        	hostNames[i] = ClusterConfig.nomMachine[daemon];
-		        	ports[i] = ClusterConfig.numPortHDFS[daemon];
+		        	hostNames[i] = ClusterConfig.hosts[daemon];
+		        	ports[i] = ClusterConfig.hdfsPorts[daemon];
 		        }
 		    	this.sendClusterData(numberDaemons, hostNames, ports, ClusterConfig.redundancy);
 		    	
@@ -188,8 +188,8 @@ public class ServerActivity extends ServerActivityA {
 	        Iterator<Integer> iterator = data.iterator();
 	        for (int i = 0; i < numberDaemons; i++) {
 	        	int daemon = iterator.next();
-	        	hostNames[i] = ClusterConfig.nomMachine[daemon];
-	        	ports[i] = ClusterConfig.numPortHDFS[daemon];
+	        	hostNames[i] = ClusterConfig.hosts[daemon];
+	        	ports[i] = ClusterConfig.hdfsPorts[daemon];
 	        }
 	        cluster = new Cluster(numberDaemons, hostNames, ports, ClusterConfig.redundancy);
     	}

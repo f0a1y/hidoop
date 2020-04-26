@@ -9,6 +9,7 @@ import java.util.List;
 import config.ClusterConfig;
 import formats.Format;
 import formats.KV;
+import formats.KVFormat;
 import formats.Format.OpenMode;
 import formats.FormatSelectorI;
 import hdfs.Command;
@@ -33,6 +34,8 @@ public class DaemonActivity extends DaemonActivityA {
         	this.hdfsUpdate(file);
     	} else if (command == Command.StatusFile) {
         	this.hdfsStatusFile(file);
+    	} else if (command == Command.getResult) {
+        	this.hdfsGetResult(file);
     	} else {
 	   		result = false;
 	   	}
@@ -43,7 +46,7 @@ public class DaemonActivity extends DaemonActivityA {
         if (this.emitterStream.receiveDataByte() > 0) {
         	
         	// Liste de numéros des fragments du file
-        	FragmentDataI data = register.addData(file);
+        	FragmentDataI data = register.addData(file, this.id);
     		
         	// Suppression des fragments préexistants
         	this.hdfsDelete(file);
@@ -140,6 +143,31 @@ public class DaemonActivity extends DaemonActivityA {
     private void hdfsStatusFile(FileDescriptionI file) throws IOException {
     	if (register.hasData(file)) {
     		this.emitterStream.sendData(register.getData(file));
+    	}
+    }
+    
+    private void hdfsGetResult(FileDescriptionI file) throws IOException {
+    	if (register.hasData(file)) {
+    		FragmentDataI data = register.getData(file);
+			
+    	    // Dossier des fragments du file
+    		String resultRepertory = this.emitterStream.receiveDataString();
+    	    String repertoryName = ClusterConfig.getDataPath() + data.getFragmentsPath() + resultRepertory;
+    	    File repertory = new File(repertoryName);
+    	    if (repertory.exists()) {
+    	    	for (File fragmentFile : repertory.listFiles()) {
+    				Format reader = new KVFormat(fragmentFile.getPath());
+    				reader.open(OpenMode.R);
+    				KV fragment;
+    				while ((fragment = reader.read()) != null) {
+    					this.emitterStream.sendData((byte)0);
+    					this.emitterStream.sendData(fragment.k);
+    					this.emitterStream.sendData(fragment.v);
+    				}
+    				reader.close();
+    	    	}
+				this.emitterStream.sendData((byte)1);
+    	    }
     	}
     }
 

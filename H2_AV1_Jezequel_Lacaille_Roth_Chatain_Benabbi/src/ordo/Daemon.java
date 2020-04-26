@@ -2,13 +2,17 @@ package ordo;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.List;
 
+import formats.Format.Type;
+import hdfs.daemon.FragmentDataI;
 import map.Mapper;
-import formats.Format;
 
 public interface Daemon extends Remote {
-	public void runMap (Mapper m, Format.Type  inputFormat, String inputFname, String suffixeResultat, CallBack cb, List<Integer> numFragment) throws RemoteException;
-
+	
+	public void runMap (Mapper mapper, 
+						Type inputFormat, 
+						String resultFormat, 
+						CallBack callback, 
+						FragmentDataI data) throws RemoteException;
 
 }

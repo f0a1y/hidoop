@@ -32,12 +32,10 @@ public abstract class DaemonActivityA implements ActivityI {
         
         // Réception de la commande
         Command command = this.emitterStream.receiveCommand(); 
-    	
         // Réception du nom du fichier
         FileDescriptionI file = null;
         if (command.isFileCommand())	
         	file = this.emitterStream.receiveFile();
-        
         this.execute(command, file);
 	}
 

@@ -56,6 +56,8 @@ public class FileDescription implements FileDescriptionI {
 					if (file.hasAlias()) {
 						if (this.hasAlias())
 							match = this.alias.equals(file.getAlias());
+						else 
+							match = this.name.equals(file.getAlias());
 					} else {
 						if (this.hasAlias())
 							match = this.alias.equals(file.getName());
@@ -70,23 +72,21 @@ public class FileDescription implements FileDescriptionI {
 	
 	@Override
 	public int hashCode() {
-		int hash = (this.name.hashCode() + this.path.hashCode()) * 10;
-		hash += this.hasAlias() ? (this.alias.hashCode() * 10) + 1 : 0;
-		hash += this.hasDestinationName() ? (this.destinationName.hashCode() * 10) +1 : 0;
+		int hash = this.hasAlias() ? this.alias.hashCode() :  this.name.hashCode();
 		return hash;
 	}
 	
 	public String toString() {
 		StringBuilder description = new StringBuilder();
-		if (this.alias != null || this.destinationName != null)
-			description.append('[');
+		description.append('[');
+		description.append(this.path);
+		description.append(" ");
 		description.append(this.name);
 		if (this.alias != null) 
 			description.append(" alias " + this.alias);
 		if (this.destinationName != null)
 			description.append(" -> " + this.destinationName);
-		if (this.alias != null || this.destinationName != null)
-			description.append(']');
+		description.append(']');
 		return description.toString();
 	}
 	

@@ -2,7 +2,7 @@ package hdfs;
 
 public enum Command {
 
-	Upload, Download, Delete, Update, Status, StatusFile, Verify;
+	Upload, Download, Delete, Update, Status, StatusFile, Verify, getResult;
     	
 	public static Command intToCommand(int command) {
 		switch (command) {
@@ -20,6 +20,8 @@ public enum Command {
     			return StatusFile;
     		case 7:
     			return Verify;
+    		case 8: 
+    			return getResult;
     		default :
     			return null;
     	}
@@ -41,6 +43,8 @@ public enum Command {
 			return 6;
 		case Verify:
 			return 7;
+		case getResult:
+			return 8;
 		default :
 			return 0;
 	}
@@ -48,10 +52,11 @@ public enum Command {
 	
 	public boolean isFileCommand() {
 		return this == Command.Upload
-			   && this == Command.Download
-			   && this == Command.Delete
-			   && this == Command.Update
-			   && this == Command.StatusFile;
+			   || this == Command.Download
+			   || this == Command.Delete
+			   || this == Command.Update
+			   || this == Command.StatusFile
+			   || this == Command.getResult;
 	}
 	
 	public boolean requiresFileName() {
@@ -60,7 +65,7 @@ public enum Command {
     
 	public boolean isServerCommand() {
 		return this == Command.Status
-				   && this == Command.Verify;
+			   || this == Command.Verify;
     }
     
 }

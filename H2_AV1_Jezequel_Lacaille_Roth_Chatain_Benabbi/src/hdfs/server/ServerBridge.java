@@ -1,11 +1,9 @@
 package hdfs.server;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import config.ClusterConfig;
@@ -19,28 +17,52 @@ public class ServerBridge {
 
     static FileRegisterI register;
 
-    public static HashMap<Integer, FragmentDataI> getFileData(FileDescriptionI file) {
+    public static FileDataI getFileData(FileDescriptionI file) {
+    	FileDataI data = null;
+    	try {
+    		if ((register = FileRegisterI.open()) != null) {
+	    		if (register.hasData(file)) {
+	    			data = register.getData(file);
+	    		}
+    		}
+    	} catch (Exception e) {e.printStackTrace();}
+    	return data;
+    }
+    
+    public static HashMap<Integer, FragmentDataI> getFragmentData(FileDescriptionI file) {
     	HashMap<Integer, FragmentDataI> result = null;
     	try {
     		if ((register = FileRegisterI.open()) != null) {
 	    		if (register.hasData(file)) {
-	    			FileDataI data = register.getData(file);
-	    			Cluster cluster = getClusterFile(data);
+	    			FileDataI fileData = register.getData(file);
+	    			Cluster cluster = getClusterFile(fileData);
 	        		if (cluster != null) {
 		    			cluster.connectAll();
 		    			cluster.sendAllData(Command.StatusFile);
 		    			cluster.sendAllData(file);
 
 		        		// Réception des numéros des fragments de chaque noeud
+		    			Set<Integer> fragments = new HashSet<>();
 		    			result = new HashMap<>();
-		    			Iterator<Integer> iterator = data.iterator();
-		    			for (int i = 0; i < data.getNumberDaemons(); i++) {
-			    			FragmentDataI fragment = cluster.receiveFragmentData(i);
-		        			if (fragment != null)
-		        				result.put(iterator.next(), fragment);
+		    			Iterator<Integer> iteratorDaemon = fileData.iterator();
+		    			for (int i = 0; i < fileData.getNumberDaemons(); i++) {
+		    				int daemon = iteratorDaemon.next();
+			    			FragmentDataI fragmentData = cluster.receiveFragmentData(i);
+		        			if (fragmentData!= null) {
+		        				Iterator<Integer> iteratorFragment = fragmentData.iterator();
+				    			while (iteratorFragment.hasNext()) {
+				    				int fragment = iteratorFragment.next();
+				    				if (fragments.contains(fragment))
+				    					iteratorFragment.remove();
+				    				else
+				    					fragments.add(fragment);
+				    			}
+				    			if (fragmentData.getNumberFragments() > 0)	
+				    				result.put(daemon, fragmentData);
+		        			}
 		    			}
-		    			
 		    			cluster.closeAll();
+		    			
 	        		}
 	    		}
     		}
@@ -48,61 +70,27 @@ public class ServerBridge {
     	return result;
     }
     
-    public static void recupererResultats(FileDescriptionI file, FormatWriter writer) {
+    public static void writeFragments(FileDescriptionI file, 	
+    								  Collection<Integer> daemons, 
+    								  String resultRepertory, 
+    								  FormatWriter writer) {
     	try {
 			if ((register = FileRegisterI.open()) != null) {
 		    	if (register.hasData(file)) {
 		    		FileDataI data = register.getData(file);
 	    			Cluster cluster = getClusterFile(data);
 	        		if (cluster != null) {
-		    			cluster.connectAll();
-		    			cluster.sendAllData(Command.Download);
-		    			cluster.sendAllData(file);
-	
-		            	// Etablissement de l'ordre de réception des fragments
-		        		int fragmentMax = 0;
-		    			Iterator<Integer> iterator = data.iterator();
-		    			for (int i = 0; i < data.getNumberDaemons(); i++) {
-							Collection<Integer> fragments = data.getDaemonFragments(iterator.next());
-							cluster.sendData(i, fragments.size());
-							for (Integer fragment : fragments) {
-			    				if (fragment > fragmentMax) 
-			    					fragmentMax = fragment;
-			    				cluster.sendData(i, fragment);
-							}
-						}
-		        		int[] order = new int[fragmentMax];
-		        		for (int i = 0; i < fragmentMax; i++)
-		        			order[i] = -1;
-		        		Set<Integer> daemonsUsed = new HashSet<>();
-		        		for (int i = 0; i < data.getNumberDaemons(); i++) {
-		        			int numberFragments = cluster.receiveDataInt(i);
-		        			List<Integer> fragments = new ArrayList<>();
-		        			for (int j = 0; j < numberFragments; j++) {
-		        				int fragment = cluster.receiveDataInt(i);
-		        				if (order[fragment] == -1) {
-		        					order[fragment] = i;
-		        					fragments.add(fragment);
-		        					daemonsUsed.add(i);
-		        				}
-		        			}
-		        			cluster.sendData(i, fragments.size());
-		        			for (int fragment : fragments)
-		        				cluster.sendData(i, fragment);
-		        		}
-		        		
-		        		// Fermeture des noeuds non nécessaires
-		        		cluster.closeAllExcept(daemonsUsed);
+		    			cluster.connectAll(daemons);
+		    			cluster.sendAllData(daemons, Command.getResult);
+		    			cluster.sendAllData(daemons, file);
+		    			cluster.sendAllData(daemons, resultRepertory);
 	
 		        		// Réception des fragments du fichier
-		        		for (int i = 0; i < fragmentMax; i++) {
-		        			if (order[i] != -1) {
-		        				cluster.sendData(order[i], i);
-		        				while (cluster.receiveDataByte(order[i]) == 0) {
-		        					String k = cluster.receiveDataString(order[i]);
-		        					String v = cluster.receiveDataString(order[i]);
-		        					writer.write(new KV(k, v));
-		        				}
+		        		for (Integer daemon : daemons) {
+		        			while (cluster.receiveDataByte(daemon) == 0) {
+		        				String k = cluster.receiveDataString(daemon);
+		        				String v = cluster.receiveDataString(daemon);
+		        				writer.write(new KV(k, v));
 		        			}
 		        		}
 	        		}
@@ -120,8 +108,8 @@ public class ServerBridge {
 	        Iterator<Integer> iterator = data.iterator();
 	        for (int i = 0; i < numberDaemons; i++) {
 	        	int daemon = iterator.next();
-	        	hostNames[i] = ClusterConfig.nomMachine[daemon];
-	        	ports[i] = ClusterConfig.numPortHDFS[daemon];
+	        	hostNames[i] = ClusterConfig.hosts[daemon];
+	        	ports[i] = ClusterConfig.hdfsPorts[daemon];
 	        }
 	        cluster = new Cluster(numberDaemons, hostNames, ports, ClusterConfig.redundancy);
     	}

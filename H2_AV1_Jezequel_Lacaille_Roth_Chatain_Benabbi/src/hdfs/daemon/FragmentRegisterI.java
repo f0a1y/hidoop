@@ -18,7 +18,7 @@ public interface FragmentRegisterI extends Serializable, Iterable<FileDescriptio
     
     boolean hasData(FileDescriptionI file);
 
-	FragmentDataI addData(FileDescriptionI file);
+	FragmentDataI addData(FileDescriptionI file, int id);
     
     FragmentDataI removeData(FileDescriptionI file);
     

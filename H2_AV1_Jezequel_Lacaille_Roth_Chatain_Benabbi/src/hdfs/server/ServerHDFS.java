@@ -28,10 +28,11 @@ public class ServerHDFS extends Thread {
     	try {
 
     		// Attente d'un client
-    		ServerSocket serveurPrimaire = new ServerSocket(GeneralConfig.port);
+    		@SuppressWarnings("resource")
+			ServerSocket mainServer = new ServerSocket(GeneralConfig.port);
     		while (true) {
-    			ServerHDFS serveur = new ServerHDFS(serveurPrimaire.accept());
-    			serveur.start();
+    			ServerHDFS server = new ServerHDFS(mainServer.accept());
+    			server.start();
     		}
     		
     	} catch (Exception e) {e.printStackTrace();}
