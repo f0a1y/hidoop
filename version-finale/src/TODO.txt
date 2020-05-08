@@ -1,0 +1,22 @@
+Tests de Perf :
+Utiliser script lancerHidoop.sh (ou lancerHidoopDistant.sh) et clean.sh pour lancer les daemons et le serveur HDFS.
+Il tester l'efficacité des MapReduce du dossier application (pour l'instant juste MyMapReduce qui fait count).
+Paramètres de test (ces paramètres peuvent être changé dans les classes ClientConfig et ClusterConfig) :
+- des fichiers de différentes tailles (100 ko, 1Mo, 10Mo...)
+- des tailles de fragments différentes (1ko, 10ko, 1Mo...)
+- un nombre de daemon différent
+- un nombre de Map par daemon différent
+Il faut commencer par uploader les fichiers sur les daemons :
+	java hdfs.ClientHDFS // Pour voir manuel
+Commande Upload :
+	java hdfs.ClientHDFS "1, nomFichier"
+Puis lancer le traitement :
+	java application.MyMapReduce nomfichier
+
+
+Application : 
+Créer d'autres classes MapReduce qui font d'autres traitements (ce servir de la classe MyMapReduce comme modèle).
+Voir moodle
+
+Scripts :
+Automatiser les scripts pour lancer (et arrêter) un nombre passer en paramètres de daemons
