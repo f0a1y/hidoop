@@ -1,6 +1,5 @@
 package ordo;
 
-import java.io.File;
 import java.rmi.Naming;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,9 +22,6 @@ public class Job implements JobInterface {
 	
 	//Nom fichier d'entrée
 	private FileDescriptionI inputFile;
-
-	//suffixe des dossiers contenant les resultat des maps
-	private String resultRepertory = "resTemp" + File.separator;
 
 	//Constructeur
 	public Job() {
@@ -60,7 +56,7 @@ public class Job implements JobInterface {
 					int port = ClusterConfig.ports[ClusterConfig.hidoop][i];
 					String host = new String(ClusterConfig.hosts[i]);
 					daemons[i] = (Daemon) Naming.lookup("//" + host + ":" + port +"/Daemon");
-					daemons[i].runMap(treatment, this.inputFormat, this.resultRepertory, callback, data);
+					daemons[i].runMap(treatment, this.inputFormat, callback, data);
 				}
 			}
 

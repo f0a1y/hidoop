@@ -36,9 +36,23 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 	@Override
 	public void runMap(Mapper mapper,
 					   Type inputFormat,
-					   String resultRepertory, 
 					   CallBack callback,  
 					   FragmentDataI data) throws RemoteException {
+		Thread thread = new Thread() {
+			public void run() {
+				try {
+					beginMap(mapper, inputFormat, callback, data);
+				} catch (RemoteException e) {e.printStackTrace();}
+			}
+		};
+		//lancement du thread secondaire
+		thread.start(); 
+	}
+
+	public void beginMap (Mapper mapper,
+						  Type inputFormat,
+						  CallBack callback,  
+						  FragmentDataI data) throws RemoteException {
 		// créer un thread secondaire qui execute de map pendant qu'on redonne la main au programme principal
 		SynchronizedList<KV> hidoopChannel = new SynchronizedList<>(new ArrayList<>(), 1000);
 		Map<Integer, List<Integer>> fragments = new HashMap<>();
@@ -54,7 +68,7 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 			Thread thread = new Thread() {
 				public void run() {
 					try {
-						mapInterne(mapper, hidoopChannel, inputFormat, resultRepertory, listFragments, data);
+						mapInterne(mapper, hidoopChannel, inputFormat, listFragments, data);
 						hidoopChannel.endInput();
 					} catch (RemoteException e) {e.printStackTrace();}
 				}
@@ -82,11 +96,10 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 		//lancement du thread secondaire
 		thread.start(); 
 	}
-
-	public void mapInterne (Mapper mapper, 
+	
+	public void mapInterne(Mapper mapper, 
 							SynchronizedList<KV> hidoopInput,
 							Type inputFormat, 
-							String resultRepertory, 
 							List<Integer> fragments,
 							FragmentDataI data) throws RemoteException {
 		try {	
