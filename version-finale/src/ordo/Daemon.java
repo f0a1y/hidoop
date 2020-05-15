@@ -9,10 +9,9 @@ import map.Mapper;
 
 public interface Daemon extends Remote {
 	
-	public void runMap (Mapper mapper, 
-						Type inputFormat, 
-						String resultFormat, 
-						CallBack callback, 
-						FragmentDataI data) throws RemoteException;
+	public void runMap (Mapper mapper,
+					    Type inputFormat,
+					    CallBack callback,  
+					    FragmentDataI data) throws RemoteException;
 
 }
