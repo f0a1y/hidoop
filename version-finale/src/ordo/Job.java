@@ -3,6 +3,7 @@ package ordo;
 import java.rmi.Naming;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.Semaphore;
 
 import config.ClusterConfig;
 import formats.Format;
@@ -48,8 +49,9 @@ public class Job implements JobInterface {
 			// recup�ration des stubs sur les machines des clusters : 
 			//pour l'instant on ouvre toutes les communications, mais il faudrait dans un 2nd temps n'ouvrir que les communications nécessaires
 			Daemon[] daemons = new Daemon[ClusterConfig.numberDaemons];
+			Semaphore beginInput = new Semaphore(0);
 			SynchronizedList<Integer> daemonChannel = new SynchronizedList<>(new ArrayList<>(), 1000);
-			CallBack callback = new CallBackImpl(daemonData.size(), daemonChannel);
+			CallBack callback = new CallBackImpl(daemonData.size(), beginInput, daemonChannel);
 			for (int i = 0; i < ClusterConfig.numberDaemons; i++) {
 				if (daemonData.containsKey(i)) {
 					FragmentDataI data = daemonData.get(i);
@@ -63,6 +65,7 @@ public class Job implements JobInterface {
 			//lecture des résultats avec hdfs
 			SynchronizedList<KV> serverChannel = new SynchronizedList<>(new ArrayList<>(), 1000);
 			ServerLink link = new ServerLink(daemonData.keySet(), daemonChannel, serverChannel);
+			beginInput.acquire();
 			link.start();
 			
 			//lancer le reduce 

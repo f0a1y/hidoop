@@ -4,6 +4,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 import config.ClusterConfig;
 import formats.KV;
@@ -13,12 +14,14 @@ import ordo.SynchronizedList;
 public class DaemonLink extends Thread {
 
     private int id;
+    private Semaphore beginInput;
     private SynchronizedList<KV> hidoopChannel;
     private SynchronizedList<Integer> hdfsChannel;
     
-    public DaemonLink(int id, SynchronizedList<KV> hidoopChannel, SynchronizedList<Integer> hdfsChannel) {
+    public DaemonLink(int id, Semaphore beginInput, SynchronizedList<KV> hidoopChannel, SynchronizedList<Integer> hdfsChannel) {
         super();
         this.id = id;
+        this.beginInput = beginInput;
         this.hidoopChannel = hidoopChannel;
         this.hdfsChannel = hdfsChannel;
     	this.hdfsChannel.beginInput();
@@ -27,6 +30,7 @@ public class DaemonLink extends Thread {
     public void run() {
         try {
 			ServerSocket daemon = new ServerSocket(ClusterConfig.ports[ClusterConfig.link][id]);
+			this.beginInput.release();
 	        Socket emitter = daemon.accept();
 	        CommunicationStream emitterStream = new CommunicationStream(emitter);
 			daemon.close();

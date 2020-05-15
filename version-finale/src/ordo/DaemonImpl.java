@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import config.ClusterConfig;
 import formats.Format;
@@ -77,20 +78,24 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 			thread.start(); 
 		}
 		SynchronizedList<Integer> hdfsChannel = new SynchronizedList<>(new ArrayList<>(), 1000);
-		DaemonLink link = new DaemonLink(this.id, hidoopChannel, hdfsChannel);
+		Semaphore beginInput = new Semaphore(0);
+		DaemonLink link = new DaemonLink(this.id, beginInput, hidoopChannel, hdfsChannel);
 		link.start();
 		
 		Thread thread = new Thread() {
 			public void run() {
-				try {List<Integer> daemons = new ArrayList<>();
+				try {
+					beginInput.acquire();
+					callback.MapBegin();
+					List<Integer> daemons = new ArrayList<>();
     	    		while (hdfsChannel.waitUntilIsNotEmpty()) {
 			    		hdfsChannel.removeAllInto(100, daemons);
 				    	for (Integer daemon : daemons) 
 				    		callback.dataSent(daemon);
 				    	daemons.clear();
 					}
-					callback.MapFinished();
-				} catch (RemoteException e) {e.printStackTrace();}
+					callback.MapFinish();
+				} catch (RemoteException | InterruptedException e) {e.printStackTrace();}
 			}
 		};
 		//lancement du thread secondaire
