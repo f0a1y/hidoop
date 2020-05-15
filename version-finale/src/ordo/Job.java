@@ -61,7 +61,7 @@ public class Job implements JobInterface {
 					daemons[i].runMap(treatment, this.inputFormat, callback, data);
 				}
 			}
-int test = 0; int test1 = 1;
+
 			//lecture des résultats avec hdfs
 			SynchronizedList<KV> serverChannel = new SynchronizedList<>(new ArrayList<>(), 1000);
 			ServerLink link = new ServerLink(daemonData.keySet(), daemonChannel, serverChannel);
