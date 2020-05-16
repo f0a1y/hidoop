@@ -46,7 +46,7 @@ public class MonteCarlo implements MapReduce {
 		private double[][] q;
 		private int[][] d;
 
-		/** Initialize to H(startindex),
+		/** Initializes to H(startindex),
 		 * so the sequence begins with H(startindex+1).
 		 */
 		HaltonSequence(long startindex) {
