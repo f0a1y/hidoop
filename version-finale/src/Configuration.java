@@ -62,20 +62,20 @@ public class Configuration {
 						List<String> fileContent = new ArrayList<>(Files.readAllLines(filePath, StandardCharsets.ISO_8859_1));
 						for (int i = 0; i < fileContent.size(); i++) {
 							String line = fileContent.get(i);
-						    if (line.contains("PATH"))
+						    if (line.contains("public final static String PATH"))
 						        fileContent.set(i, "    public final static String PATH = \"" + javaPath + "\";");
-						    else if (line.contains("hosts")) {
+						    else if (line.contains("public final static String hosts")) {
 						    	StringBuilder newLine = new StringBuilder();
-						    	newLine.append("    public final static String hosts = {");
+						    	newLine.append("    public final static String[] hosts = {");
 						    	for (int j = 0; j < hosts.length - 1; j++)
 						    		newLine.append("\"" + hosts[j] + "\", ");
 					    		newLine.append("\"" + hosts[hosts.length - 1] + "\"};");
 						    	fileContent.set(i, newLine.toString());
-						    } else if (line.contains("numberDaemons"))
+						    } else if (line.contains("public final static int numberDaemons"))
 						        fileContent.set(i, "    public final static int numberDaemons = " + hosts.length + ";");
-						    else if (ports && line.contains("ports")) {
+						    else if (ports && line.contains("public final static int[][] ports")) {
 						    	StringBuilder newLine = new StringBuilder();
-						    	newLine.append("    public final static int ports[][] = {");
+						    	newLine.append("    public final static int ports[][] = {{");
 						    	int currentPort = numberPorts;
 						    	for (int j = 0; j < 2; j++) {
 						    		for (int k = 0; k < hosts.length - 1; k++)
@@ -84,13 +84,13 @@ public class Configuration {
 						    	}
 					    		for (int k = 0; k < hosts.length - 1; k++)
 					    			newLine.append(currentPort++ + ", ");
-					    		newLine.append("" + currentPort++ + "};");
+					    		newLine.append("" + currentPort++ + "}};");
 						    	fileContent.set(i, newLine.toString());
 						    } 
-						    else if (maps && line.contains("numberMaps")) {
+						    else if (maps && line.contains("public final static int numberMaps")) {
 						        fileContent.set(i, "    public final static int numberMaps = " + numberMaps + ";");
 						    }
-						    else if (redundancy && line.contains("redundancy")) {
+						    else if (redundancy && line.contains("public final static int redundancy")) {
 						        fileContent.set(i, "    public final static int redundancy = " + numberRedundancy + ";");
 						    }
 						}

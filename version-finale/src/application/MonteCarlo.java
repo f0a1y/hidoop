@@ -145,6 +145,7 @@ public class MonteCarlo implements MapReduce {
     					 			  .divide(numTotal, RoundingMode.HALF_UP);
     	
 		System.out.println("Valeur estimée de Pi : " + result);
+		writer.write(new KV("Valeur estimée de Pi", result.toString()));
 	}
 	
 	public static void main(String args[]) {

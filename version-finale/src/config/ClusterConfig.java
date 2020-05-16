@@ -24,9 +24,9 @@ public class ClusterConfig {
     public final static String PATH = "C:\\Users\\Alexandre\\git\\hidoop\\hidoop\\src";
 
     // Liste des noms d'hôte des noeuds du cluster
-    public final static String hosts = {"phenix", "manticore", "cerbere", "pinkfloyd", "medecineman"};
+    public final static String[] hosts = {"phenix", "manticore", "cerbere", "pinkfloyd", "medecineman"};
 
-    public final static int ports[][] = {4001, 4002, 4003, 4004, 4005}, {4006, 4007, 4008, 4009, 4010}, {4011, 4012, 4013, 4014, 4015};
+    public final static int[][] ports = {{4001, 4002, 4003, 4004, 4005}, {4006, 4007, 4008, 4009, 4010}, {4011, 4012, 4013, 4014, 4015}};
     
     // Identifiants des différents services
     public final static int hidoop = 0;
