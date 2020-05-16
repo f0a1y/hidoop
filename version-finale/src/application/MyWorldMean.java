@@ -49,20 +49,28 @@ public class MyMapReduce implements MapReduce {
 	}
 	
 	public void reduce(SynchronizedList<KV> channel, FormatWriter writer) {
-        Map<String, Integer> occurrences = new HashMap<>();
-    	List<KV> input = new ArrayList<>();
+        //Map<String, Integer> occurrences = new HashMap<>();
+		List<KV> input = new ArrayList<>();
+		long nbWord = 0;
+		long nbletter = 0;
     	while (channel.waitUntilIsNotEmpty()) {
 			channel.removeAllInto(100, input);
     		for (KV pair : input) {
-				if (occurrences.containsKey(pair.k)) 
-					occurrences.put(pair.k, occurrences.get(pair.k) + Integer.parseInt(pair.v));
-				else 
-					occurrences.put(pair.k, Integer.parseInt(pair.v));
+				if (pair.k= NBWORDS) {
+					nbWord += Long.parseLong(pair.v);
+				}
+				if (pair.k= NBLETTERS) {
+					nbletter += Long.parseLong(pair.v);
+				}	
+				else {
+					System.out.println("erreur dans le format transmis pas la SynchronizedList (cf le reduce");
+				}
+					
 			}
     		input.clear();
 		}
-		for (String word : occurrences.keySet()) 
-			writer.write(new KV(word, occurrences.get(word).toString()));
+		double mean = ((double) nbletter / nbWord) ;
+		writer.write(new KV("mean", Double.toString(mean)));
 	}
 	
 	public static void main(String args[]) {
