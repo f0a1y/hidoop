@@ -13,8 +13,12 @@ public class MapReduceImpl implements MapReduce {
 	
 	private static final long serialVersionUID = 1L;
 
+	public boolean requiresReader() {
+		return false;
+	}
+
 	// MapReduce program that computes word counts
-	public void map(FormatReader reader, SynchronizedList<KV> channel) {
+	public void map(FormatReader reader, SynchronizedList<KV> channel, int id) {
 		System.out.println("Je suis dans le map");
 		try{
 			Thread.sleep(5*1000);
@@ -33,7 +37,6 @@ public class MapReduceImpl implements MapReduce {
 	public static void main(String args[]) {
 		Job job = new Job();
 		job.setInputFormat(Format.Type.LINE);
-		job.setInputFile(MapReduce.getFile(args[0]));
 		System.out.println("Execution de l'instance de Job");
 		long begin = System.currentTimeMillis();
 		job.startJob(new MapReduceImpl());

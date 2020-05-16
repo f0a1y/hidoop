@@ -8,6 +8,8 @@ import ordo.SynchronizedList;
 
 public interface Mapper extends Serializable {
 	
-	public void map(FormatReader reader, SynchronizedList<KV> channel);
+	public void map(FormatReader reader, SynchronizedList<KV> channel, int id);
+	
+	public boolean requiresReader();
 
 }

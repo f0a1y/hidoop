@@ -57,26 +57,43 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 		// créer un thread secondaire qui execute de map pendant qu'on redonne la main au programme principal
 		SynchronizedList<KV> hidoopChannel = new SynchronizedList<>(new ArrayList<>(), 1000);
 		Map<Integer, List<Integer>> fragments = new HashMap<>();
-		int numberMaps = Math.min(data.getNumberFragments(), ClusterConfig.numberMaps);
-		Iterator<Integer> iterator = data.iterator();
-		for (int i = 0; i < ClusterConfig.numberMaps; i++)
-			fragments.put(i, new ArrayList<>());
-		for (int i = 0; i < data.getNumberFragments(); i++)
-			fragments.get(i % ClusterConfig.numberMaps).add(iterator.next());
+		int numberMaps;
+		if (data != null) {
+			numberMaps = Math.min(data.getNumberFragments(), ClusterConfig.numberMaps);
+			Iterator<Integer> iterator = data.iterator();
+			for (int i = 0; i < ClusterConfig.numberMaps; i++)
+				fragments.put(i, new ArrayList<>());
+			for (int i = 0; i < data.getNumberFragments(); i++)
+				fragments.get(i % ClusterConfig.numberMaps).add(iterator.next());
+		} else 
+			numberMaps = ClusterConfig.numberMaps;
 		for (int i = 0; i < numberMaps; i++) {
-			final List<Integer> listFragments = fragments.get(i);
 			hidoopChannel.beginInput();
-			Thread thread = new Thread() {
-				public void run() {
-					try {
-						mapInterne(mapper, hidoopChannel, inputFormat, listFragments, data);
-						hidoopChannel.endInput();
-					} catch (RemoteException e) {e.printStackTrace();}
-				}
-			};
+			Thread thread;
+			if (data != null) {
+				final List<Integer> listFragments = fragments.get(i);
+				thread = new Thread() {
+					public void run() {
+						try {
+							mapInterne(mapper, hidoopChannel, inputFormat, listFragments, data);
+							hidoopChannel.endInput();
+						} catch (RemoteException e) {e.printStackTrace();}
+					}
+				};
+			} else {
+				thread = new Thread() {
+					public void run() {
+						try {
+							mapInterne(mapper, hidoopChannel);
+							hidoopChannel.endInput();
+						} catch (RemoteException e) {e.printStackTrace();}
+					}
+				};
+			}
 			//lancement du thread secondaire
 			thread.start(); 
 		}
+		
 		SynchronizedList<Integer> hdfsChannel = new SynchronizedList<>(new ArrayList<>(), 1000);
 		Semaphore beginInput = new Semaphore(0);
 		DaemonLink link = new DaemonLink(this.id, beginInput, hidoopChannel, hdfsChannel);
@@ -103,10 +120,10 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 	}
 	
 	public void mapInterne(Mapper mapper, 
-							SynchronizedList<KV> hidoopInput,
-							Type inputFormat, 
-							List<Integer> fragments,
-							FragmentDataI data) throws RemoteException {
+						   SynchronizedList<KV> hidoopInput,
+						   Type inputFormat, 
+						   List<Integer> fragments,
+						   FragmentDataI data) throws RemoteException {
 		try {	
 			Iterator<Integer> iterator = fragments.iterator();
 			while (iterator.hasNext()) {
@@ -122,16 +139,19 @@ public class DaemonImpl extends UnicastRemoteObject implements Daemon {
 				reader.open(OpenMode.R);
 
 				//Appel de la fonction map
-				mapper.map(reader, hidoopInput);
+				mapper.map(reader, hidoopInput, this.id);
 				
 				//Fermeture du reader et du writer
 				reader.close();
 			}
-
 		} catch (Exception e) {
 			System.out.println("Erreur dans le map interne");
 			e.printStackTrace();
 		}
+	}
+	
+	public void mapInterne(Mapper mapper, SynchronizedList<KV> hidoopInput) throws RemoteException {
+		mapper.map(null, hidoopInput, this.id);
 	}
 	
 	public static void main(String args[]) {  

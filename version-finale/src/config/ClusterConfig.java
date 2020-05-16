@@ -21,16 +21,12 @@ import hdfs.server.ServerActivity;
 public class ClusterConfig {
 
     // Chemin du projet
-    public final static String PATH = "C:\\Users\\Alexandre\\git\\hidoop\\H2_AV1_Jezequel_Lacaille_Roth_Chatain_Benabbi\\src\\";
+    public final static String PATH = "C:\\Users\\Alexandre\\git\\hidoop\\hidoop\\src";
 
     // Liste des noms d'hôte des noeuds du cluster
-	public final static String hosts[] = {"localhost", "localhost", "localhost", "localhost", "localhost", "localhost"};
-    // public final static String nomMachine[] = {"Griffon", "Pixie", "manticore", "nymphe", "succube", "cerbere"};
+    public final static String hosts = {"phenix", "manticore", "cerbere", "pinkfloyd", "medecineman"};
 
-    // Liste des ports des daemons des noeuds du cluster
-    public final static int ports[][] = {{4500, 4501, 4502, 4503, 4504, 4505},
-    									{4100, 4101, 4102, 4103, 4104, 4105},
-    									{4200, 4201, 4202, 4203, 4204, 4205}};
+    public final static int ports[][] = {4001, 4002, 4003, 4004, 4005}, {4006, 4007, 4008, 4009, 4010}, {4011, 4012, 4013, 4014, 4015};
     
     // Identifiants des différents services
     public final static int hidoop = 0;
@@ -38,7 +34,7 @@ public class ClusterConfig {
     public final static int link = 2;
 
     // Nombre de noeuds du cluster
-    public final static int numberDaemons = 3;
+    public final static int numberDaemons = 5;
     
     // Nombre max de maps parallèles par daemon
     public final static int numberMaps = 3;
@@ -87,7 +83,7 @@ public class ClusterConfig {
     
     // Retourne le chemin du dossier contenant les données du programme
     public static String getDataPath() {
-    	return PATH + "data" + File.separator;
+    public final static String PATH = "C:\\Users\\Alexandre\\git\\hidoop\\hidoop\\src";
     }
     
     // Choix du nom du dossier contenant les fragments d'un fichier

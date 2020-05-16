@@ -18,8 +18,12 @@ public class MyMapReduce implements MapReduce {
 	
 	private static final long serialVersionUID = 1L;
 
+	public boolean requiresReader() {
+		return true;
+	}
+	
 	// MapReduce program that computes word counts
-	public void map(FormatReader reader, SynchronizedList<KV> channel) {	
+	public void map(FormatReader reader, SynchronizedList<KV> channel, int id) {	
 		Map<String, Integer> occurrences = new HashMap<>();
 		KV pair;
 		while ((pair = reader.read()) != null) {
