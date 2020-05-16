@@ -118,7 +118,7 @@ public class Configuration {
 						for (int i = 0; i < hosts.length; i++)
 							fileContent.add("ssh $USER@" + hosts[i] + " 'pkill -f java.*DaemonImpl*'");
 						Files.write(filePath, fileContent, StandardCharsets.ISO_8859_1);
-						//t
+
 						filePath = Paths.get("preparation-ssh.sh");
 						fileContent = new ArrayList<>();
 						fileContent.add("ssh-keygen -t rsa");
