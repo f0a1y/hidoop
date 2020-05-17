@@ -60,10 +60,9 @@ public class WordMedian implements MapReduce {
     		input.clear();
 		}
     	Map<Integer, Integer> sorted = occurrences.entrySet()
-    			.stream()
-    			.sorted(Map.Entry.<Integer, Integer>comparingByValue())
-    			.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
-    	
+    											  .stream()
+    											  .sorted(Map.Entry.<Integer, Integer>comparingByValue())
+    											  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 		for (Map.Entry<Integer, Integer> occurrence : sorted.entrySet()) 
 			writer.write(new KV("Mots de taille : " + occurrence.getKey().toString(), occurrence.getValue().toString()));
 	}
@@ -78,7 +77,7 @@ public class WordMedian implements MapReduce {
 		long end = System.currentTimeMillis();
 		//System.out.println("Fin de l'éxecution de l'instance de Job");
         //System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
-		System.out.println((end - begin));
+		System.out.print((end - begin));
         System.exit(0);
 	}
 	

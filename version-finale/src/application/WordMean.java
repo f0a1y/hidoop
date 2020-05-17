@@ -34,8 +34,8 @@ public class WordMean implements MapReduce {
                 words++;
 			}
         }
-        channel.add(new KV(WORDS, letters.toString()));
-        channel.add(new KV(LETTERS, words.toString()));
+        channel.add(new KV(WORDS, words.toString()));
+        channel.add(new KV(LETTERS, letters.toString()));
 	}
 	
 	public void reduce(SynchronizedList<KV> channel, FormatWriter writer) {
@@ -67,7 +67,7 @@ public class WordMean implements MapReduce {
 		long end = System.currentTimeMillis();
 		//System.out.println("Fin de l'éxecution de l'instance de Job");
         //System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
-		System.out.println((end - begin));
+		System.out.print((end - begin));
         System.exit(0);
 	}
 	

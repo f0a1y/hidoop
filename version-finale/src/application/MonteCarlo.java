@@ -46,7 +46,7 @@ public class MonteCarlo implements MapReduce {
 		private double[][] q;
 		private int[][] d;
 
-		/** Initializes to H(startindex),
+		/** Initialize to H(startindex),
 		 * so the sequence begins with H(startindex+1).
 		 */
 		HaltonSequence(long startindex) {
@@ -144,7 +144,7 @@ public class MonteCarlo implements MapReduce {
     					 			  .multiply(BigDecimal.valueOf(numInside))
     					 			  .divide(numTotal, RoundingMode.HALF_UP);
     	
-		//System.out.println("Valeur estimée de Pi : " + result);
+		System.out.print(result);
 		writer.write(new KV("Valeur estimée de Pi", result.toString()));
 	}
 	
@@ -157,7 +157,6 @@ public class MonteCarlo implements MapReduce {
 		long end = System.currentTimeMillis();
 		//System.out.println("Fin de l'éxecution de l'instance de Job");
         //System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
-		System.out.println((end - begin));
         System.exit(0);
 	}
 	
