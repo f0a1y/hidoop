@@ -96,9 +96,9 @@ public class Configuration {
 						}
 						Files.write(filePath, fileContent, StandardCharsets.ISO_8859_1);
 
-						filePath = Paths.get("lancer-hidoop.sh");
+						/*filePath = Paths.get("lancer-hidoop.sh");
 						fileContent = new ArrayList<>();
-						fileContent.add("javac -encoding ISO-8859-1 */*.java */*/*.java");
+						fileContent.add("javac -encoding ISO-8859-1 ");
 						fileContent.add("mate-terminal --window -e \"/bin/bash -c \\\"java hdfs.server.ServerHDFS; exec /bin/bash\\\"\" \\");
 						for (int i = 0; i < hosts.length - 1; i++)
 							fileContent.add("--tab -e \"/bin/bash -c \\\"ssh $USER@" + hosts[i] + " 'cd " + path + " && java hdfs.daemon.DaemonHDFS " + i + "'; exec /bin/bash\\\"\" \\");
@@ -108,7 +108,15 @@ public class Configuration {
 						for (int i = 1; i < hosts.length - 1; i++)
 							fileContent.add("--tab -e \"/bin/bash -c \\\"ssh $USER@" + hosts[i] + " 'cd " + path + " && java ordo.DaemonImpl " + i + "'; exec /bin/bash\\\"\" \\");
 						fileContent.add("--tab -e \"/bin/bash -c \\\"ssh $USER@" + hosts[hosts.length - 1] + " 'cd " + path + " && java ordo.DaemonImpl " + (hosts.length - 1) + "'; exec /bin/bash\\\"\"");
-						Files.write(filePath, fileContent, StandardCharsets.ISO_8859_1);
+						Files.write(filePath, fileContent, StandardCharsets.ISO_8859_1);*/
+						filePath = Paths.get("lancer-hidoop.sh");
+						fileContent = new ArrayList<>();
+						fileContent.add("javac -encoding ISO-8859-1 */*.java */*/*.java");
+						fileContent.add("mate-terminal --window -e \"/bin/bash -c \\\"java hdfs.server.ServerHDFS; exec /bin/bash\\\"\" \\");
+						for (int i = 0; i < hosts.length - 1; i++) {
+							fileContent.add("ssh $USER@" + hosts[hosts.length - 1] + " 'cd " + path + " && java hdfs.daemon.DaemonHDFS " + (hosts.length - 1) + "' &");
+							fileContent.add("ssh $USER@" + hosts[hosts.length - 1] + " 'cd " + path + " && java ordo.DaemonImpl " + (hosts.length - 1) + "' &");
+						}
 
 						filePath = Paths.get("clean.sh");
 						fileContent = new ArrayList<>();
@@ -117,6 +125,7 @@ public class Configuration {
 
 						for (int i = 0; i < hosts.length; i++)
 							fileContent.add("ssh $USER@" + hosts[i] + " 'pkill -f java.*DaemonImpl*'");
+						fileContent.add("pkill -f java.*ServerHDFS*");
 						Files.write(filePath, fileContent, StandardCharsets.ISO_8859_1);
 
 						filePath = Paths.get("preparation-ssh.sh");

@@ -144,19 +144,20 @@ public class MonteCarlo implements MapReduce {
     					 			  .multiply(BigDecimal.valueOf(numInside))
     					 			  .divide(numTotal, RoundingMode.HALF_UP);
     	
-		System.out.println("Valeur estimée de Pi : " + result);
+		//System.out.println("Valeur estimée de Pi : " + result);
 		writer.write(new KV("Valeur estimée de Pi", result.toString()));
 	}
 	
 	public static void main(String args[]) {
 		Job job = new Job();
         job.setInputFormat(Format.Type.LINE);
-		System.out.println("Execution de l'instance de Job");
+		//System.out.println("Execution de l'instance de Job");
         long begin = System.currentTimeMillis();
 		job.startJob(new MonteCarlo(Long.parseLong(args[0])));
 		long end = System.currentTimeMillis();
-		System.out.println("Fin de l'éxecution de l'instance de Job");
-        System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
+		//System.out.println("Fin de l'éxecution de l'instance de Job");
+        //System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
+		System.out.println((end - begin));
         System.exit(0);
 	}
 	

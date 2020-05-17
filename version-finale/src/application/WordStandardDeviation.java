@@ -64,7 +64,7 @@ public class WordStandardDeviation implements MapReduce {
         mean = Math.pow(mean, 2.0);
         double term = (((double) squares / ((double) words)));
         Double standardDeviation = Math.sqrt((term - mean));
-		System.out.print("Ecart-type des mots : " + standardDeviation);
+		//System.out.print("Ecart-type des mots : " + standardDeviation);
 		writer.write(new KV("Ecart-type des mots", standardDeviation.toString()));
 	}
 	
@@ -72,12 +72,13 @@ public class WordStandardDeviation implements MapReduce {
 		Job job = new Job();
         job.setInputFormat(Format.Type.LINE);
         job.setInputFile(MapReduce.getFile(args[0]));
-		System.out.println("Execution de l'instance de Job");
+		//System.out.println("Execution de l'instance de Job");
         long begin = System.currentTimeMillis();
 		job.startJob(new WordStandardDeviation());
 		long end = System.currentTimeMillis();
-		System.out.println("Fin de l'éxecution de l'instance de Job");
-        System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
+		//System.out.println("Fin de l'éxecution de l'instance de Job");
+        //System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
+		System.out.println((end - begin));
         System.exit(0);
 	}
 

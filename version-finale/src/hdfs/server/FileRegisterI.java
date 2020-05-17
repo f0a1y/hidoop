@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+import config.ClusterConfig;
 import hdfs.FileDescriptionI;
 
 public interface FileRegisterI extends Serializable, Iterable<FileDescriptionI> {
@@ -24,7 +25,7 @@ public interface FileRegisterI extends Serializable, Iterable<FileDescriptionI> 
     
     static void save(FileRegisterI register) {
     	try {
-            ObjectOutputStream objectOS = new ObjectOutputStream(new FileOutputStream("server-register.ser"));
+            ObjectOutputStream objectOS = new ObjectOutputStream(new FileOutputStream(ClusterConfig.getDataPath() + "server-register.ser"));
             objectOS.writeObject(register);
             objectOS.close();
         } catch(IOException e) {e.printStackTrace();}
@@ -32,10 +33,10 @@ public interface FileRegisterI extends Serializable, Iterable<FileDescriptionI> 
 	
     static FileRegisterI open() {
     	FileRegisterI register = null;
-		File fichier = new File("server-register.ser"); 
+		File fichier = new File(ClusterConfig.getDataPath() + "server-register.ser"); 
 		if (fichier.exists()) {
 			try {
-				ObjectInputStream objectIS = new ObjectInputStream(new FileInputStream("server-register.ser"));
+				ObjectInputStream objectIS = new ObjectInputStream(new FileInputStream(ClusterConfig.getDataPath() + "server-register.ser"));
 				register = (FileRegisterI)objectIS.readObject();
 				objectIS.close();
 			} catch(IOException e) {e.printStackTrace();}

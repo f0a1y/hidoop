@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+import config.ClusterConfig;
 import hdfs.FileDescriptionI;
 
 public interface FragmentRegisterI extends Serializable, Iterable<FileDescriptionI> {
@@ -30,7 +31,7 @@ public interface FragmentRegisterI extends Serializable, Iterable<FileDescriptio
     
     static void save(FragmentRegisterI register, int id) {
     	try {
-            ObjectOutputStream objectOS = new ObjectOutputStream(new FileOutputStream("daemon-" + id + "-register.ser"));
+            ObjectOutputStream objectOS = new ObjectOutputStream(new FileOutputStream(ClusterConfig.getDataPath() + "daemon-" + id + "-register.ser"));
             objectOS.writeObject(register);
             objectOS.close();
         } catch(IOException e) {e.printStackTrace();}
@@ -38,10 +39,10 @@ public interface FragmentRegisterI extends Serializable, Iterable<FileDescriptio
 	
     static FragmentRegisterI open(int id) {
     	FragmentRegisterI register = null;
-		File fichier = new File("daemon-" + id + "-register.ser"); 
+		File fichier = new File(ClusterConfig.getDataPath() + "daemon-" + id + "-register.ser"); 
 		if (fichier.exists()) {
 			try {
-				ObjectInputStream objectIS = new ObjectInputStream(new FileInputStream("daemon-" + id + "-register.ser"));
+				ObjectInputStream objectIS = new ObjectInputStream(new FileInputStream(ClusterConfig.getDataPath() + "daemon-" + id + "-register.ser"));
 				register = (FragmentRegisterI)objectIS.readObject();
 				objectIS.close();
 			} catch(IOException e) {e.printStackTrace();}

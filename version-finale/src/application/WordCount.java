@@ -63,12 +63,13 @@ public class WordCount implements MapReduce {
 		Job job = new Job();
         job.setInputFormat(Format.Type.LINE);
         job.setInputFile(MapReduce.getFile(args[0]));
-		System.out.println("Execution de l'instance de Job");
+		//System.out.println("Execution de l'instance de Job");
         long begin = System.currentTimeMillis();
 		job.startJob(new WordCount());
 		long end = System.currentTimeMillis();
-		System.out.println("Fin de l'éxecution de l'instance de Job");
-        System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
+		//System.out.println("Fin de l'éxecution de l'instance de Job");
+        //System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
+		System.out.println((end - begin));
         System.exit(0);
 	}
 	

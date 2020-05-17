@@ -2,6 +2,7 @@ package application;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -59,9 +60,10 @@ public class WordMedian implements MapReduce {
     		input.clear();
 		}
     	Map<Integer, Integer> sorted = occurrences.entrySet()
-    											  .stream()
-    											  .sorted(Map.Entry.<Integer, Integer>comparingByValue())
-    											  .collect(Collectors.toMap(e -> e.getKey(),e -> e.getValue()));
+    			.stream()
+    			.sorted(Map.Entry.<Integer, Integer>comparingByValue())
+    			.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+    	
 		for (Map.Entry<Integer, Integer> occurrence : sorted.entrySet()) 
 			writer.write(new KV("Mots de taille : " + occurrence.getKey().toString(), occurrence.getValue().toString()));
 	}
@@ -70,12 +72,13 @@ public class WordMedian implements MapReduce {
 		Job job = new Job();
         job.setInputFormat(Format.Type.LINE);
         job.setInputFile(MapReduce.getFile(args[0]));
-		System.out.println("Execution de l'instance de Job");
+		//System.out.println("Execution de l'instance de Job");
         long begin = System.currentTimeMillis();
 		job.startJob(new WordMedian());
 		long end = System.currentTimeMillis();
-		System.out.println("Fin de l'éxecution de l'instance de Job");
-        System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
+		//System.out.println("Fin de l'éxecution de l'instance de Job");
+        //System.out.println("Durée de l'éxecution : " + (end - begin) + "ms");
+		System.out.println((end - begin));
         System.exit(0);
 	}
 	
